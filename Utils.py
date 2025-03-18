@@ -5,13 +5,16 @@ import abc
 # Classe abstraite pour représenter un événement, implémente la méthode run qui sera implémentée par les classes filles
 class Event():
 
-    def __init__(self, timestamp: int, call):
-        self.call = call
+    def __init__(self, timestamp: float ):
         self.timestamp = timestamp
 
     @abc.abstractmethod
-    def run(self, network):
+    def run(self):
         pass
+    
+    
+# Event emission d'un message.
+
 
 # Classe définissant une timeline.
 # Une timeline est une liste d'évènements ordonnée par leur timestamp.
