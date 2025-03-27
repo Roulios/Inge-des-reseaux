@@ -1,21 +1,6 @@
 import heapq
 import abc
 
-
-# Classe abstraite pour représenter un événement, implémente la méthode run qui sera implémentée par les classes filles
-class Event():
-
-    def __init__(self, timestamp: float ):
-        self.timestamp = timestamp
-
-    @abc.abstractmethod
-    def run(self):
-        pass
-    
-    
-# Event emission d'un message.
-
-
 # Classe définissant une timeline.
 # Une timeline est une liste d'évènements ordonnée par leur timestamp.
 # On utilise un tas à priorité pour stocker les évènements pour simuler une timeline sans avoir à littéralement
@@ -26,7 +11,7 @@ class Timeline():
         self.__index = 0
         self.__data: heapq = []
 
-    def append(self, event: Event):
+    def append(self, event):
         heapq.heappush(self.__data, (event.timestamp, self.__index, event))
         self.length += 1
         self.__index += 1
@@ -44,3 +29,20 @@ class Timeline():
             return self.pop()
         else:
             raise StopIteration
+
+
+# Classe abstraite pour représenter un événement, implémente la méthode run qui sera implémentée par les classes filles
+class Event():
+
+    def __init__(self, timeline: Timeline, timestamp: float ):
+        self.timestamp = timestamp
+        
+        # Ajout de l'évènement à la timeline
+        timeline.append(self)
+
+    @abc.abstractmethod
+    def run(self):
+        pass
+    
+    
+# Event emission d'un message.
