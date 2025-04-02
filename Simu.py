@@ -48,6 +48,14 @@ class Entity:
 class User(Entity):
     def __init__(self, id: int, position: float, protocol, range: float, priority: int, buffer_capacity: int, treatment_speed: float):
         super().__init__(id, position, protocol, range, priority, buffer_capacity, treatment_speed)
+    
+    # Fonction qui permet de modifier la position d'un utilisateur  
+    # param : movement => float : à quel distance on bouge l'utilisateur de sa position actuelle.
+    def move(self, movement: float):
+        if self.position + movement >= 0:
+            self.position = self.position + movement
+        else:
+            self.position = 0
 
 class Infrastructure(Entity):
     def __init__(self, id: int, position: float, protocol, range: float, priority: int, buffer_capacity: int, treatment_speed: float):
