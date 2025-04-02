@@ -22,18 +22,22 @@ class Entity:
         self.busy: bool = False # Variable pour savoir si l'entité est en traitement de message ou pas.
     
     @abc.abstractmethod          
-    def receive_message(self, timestamp: float, message):
+    def receive_message(self, timestamp: float, message, logs: bool=False):
         # Check si l'on peut stocker le message
-        if(self.buffer_capacity > message.size):
+        if(self.buffer_capacity > message.size):            
             self.buffer.append(message)
             self.buffer_capacity -= message.size
             
             # Si n'est pas en traitement on lance directement un event traitement.
             if not self.busy:
                 self.busy = True
-                Treatment(timestamp + WATTING_TIME, self)
+                timeline.append(Treatment(timestamp + WATTING_TIME, self))
                         
             return True
+        
+        else:
+            if logs:
+                print("Message from ", message.sender.id, " to ", self.id, " is dropped : Buffer full")
         return False
     
     @abc.abstractmethod        
@@ -43,11 +47,11 @@ class Entity:
     
 class User(Entity):
     def __init__(self, id: int, position: float, protocol, range: float, priority: int, buffer_capacity: int, treatment_speed: float):
-        super.__init__(id, position, protocol, range, priority, buffer_capacity, treatment_speed)
+        super().__init__(id, position, protocol, range, priority, buffer_capacity, treatment_speed)
 
 class Infrastructure(Entity):
     def __init__(self, id: int, position: float, protocol, range: float, priority: int, buffer_capacity: int, treatment_speed: float):
-        super.__init__(id, position, protocol, range, priority, buffer_capacity, treatment_speed)
+        super().__init__(id, position, protocol, range, priority, buffer_capacity, treatment_speed)
 
 class Message:
     def __init__(self, id: int, sender: Entity, receiver: int, size: float, priority: int):
@@ -66,85 +70,93 @@ infrastructures : list[Infrastructure] = []
 entities : list[Entity] = []
        
 
-# Classe abstraite pour représenter un événement, implémente la méthode run qui sera implémentée par les classes filles
-class Event():
-
-    def __init__(self, timestamp: float ):
-        self.timestamp = timestamp
-
-    @abc.abstractmethod
-    def run(self):
-        pass
-    
-    
 # Event emission d'un message.
-class Emission(Event):
+class Emission(Utils.Event):
     
     def __init__(self, timestamp: float, message: Message):
         super().__init__(timestamp)
         self.message = message
         
-    def run(self):    
+    def run(self, logs=False):
         for entity in entities:
-            
             distance = abs(self.message.sender.position - entity.position)
             
-            if distance < entity.range:
+            if distance < entity.range and entity.id != self.message.sender.id:
+                if logs:
+                    print("Message from ", self.message.sender.id, " to ", entity.id, " is in range")
+                    
                 # On est a porté, création d'un event reception dans la timeline.
-                Reception(self.timestamp + distance*MESSAGE_SPEED, self.message, entity)
-                
-class Reception(Event):
+                timeline.append(Reception(self.timestamp + distance*MESSAGE_SPEED, self.message, entity))
+            
+            elif(distance > entity.range): 
+                if logs:
+                    print("Message from ", self.message.sender.id, " to ", entity.id, " is out of range")
+class Reception(Utils.Event):
     def __init__(self, timestamp: float, message: Message, receiver: Entity):
         super().__init__(timestamp)
         self.message = message
+        self.receiver = receiver
         
-    def run(self):
+    def run(self, logs: bool=False):
+        if logs:
+            print("Message from ", self.message.sender.id, " to ", self.receiver.id, " is received at time: ", self.timestamp)
+        
         # Tentative de reception du message par l'entité.
-        self.message.receiver.receive_message(self.message)
+        self.receiver.receive_message(timestamp=self.timestamp, message=self.message, logs=logs)
         
-class Treatment(Event):
+class Treatment(Utils.Event):
     def __init__(self, timestamp: float, entity: Entity):
         super().__init__(timestamp)
         self.entity = entity
         
-    def run(self):
+    def run(self, logs: bool=False):
         # Traitement du message
         message : Message = self.entity.buffer.pop(0)
         self.entity.buffer_capacity += message.size
         
+        if logs:
+            print("Message from ", message.sender.id, " to ", self.entity.id, " is treated at time: ", self.timestamp)
+        
         # On regarde si il reste des messages dans le buffer
         if len(self.entity.buffer) > 0:
             # On lance un event traitement
-            Treatment(self.timestamp + (message.size / self.entity.treatment_speed), self.entity)
+            timeline.append(Treatment(self.timestamp + (message.size / self.entity.treatment_speed), self.entity))
         else:
             self.entity.busy = False
             
 # Initialisation de la liste des utilisateurs
-
-# def __init__(self, id: int, position: float, protocol, range: float, priority: int, buffer_capacity: int, treatment_speed: float):
-
-
 entities = [
+    # Utilisateurs
     User(id=0, position=0.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1),
     User(id=1, position=2.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1),
-    User(id=2, position=4.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1),
+    User(id=2, position=40.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1),
+    
+    #Infrastructure(id=3, position=10.0, protocol=0, range=200, priority=0, buffer_capacity=100, treatment_speed=0.1),
 ]
 
 # Fonction qui peuple de tentative d'emission de message dans la timeline
 def populate_simulation():
     timeline.append(Emission(timestamp=0.0, message=Message(id=0, sender=entities[0], receiver=1, size=10, priority=0)))
-    timeline.append(Emission(timestamp=0.3, message=Message(id=1, sender=entities[0], receiver=1, size=10, priority=0)))
-    timeline.append(Emission(timestamp=0.6, message=Message(id=2, sender=entities[2], receiver=1, size=10, priority=0)))
+    timeline.append(Emission(timestamp=0.0001, message=Message(id=1, sender=entities[0], receiver=1, size=1, priority=0)))
+    timeline.append(Emission(timestamp=0.6, message=Message(id=2, sender=entities[2], receiver=1, size=1, priority=0)))
     
-def run_simulation(show_logs: bool = False):
-    if show_logs:
+def run_simulation(logs: bool = False):
+    
+    index: int = 0
+    
+    if logs:
         print("Lancement de la simulation")
     
-    for event in timeline:
-        print("Event at time: ", event.timestamp, "is running")
+    while index < timeline.length:
         
+        event = timeline.pop()
+        
+        if logs:
+            print("Event at time: ", event.timestamp, "is running")
+            print("Remaining events: ", timeline.length)
+            
         #TODO: Check for bugs
-        event.run()
+        event.run(logs=True)
         
 # Simulation
 

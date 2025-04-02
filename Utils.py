@@ -34,11 +34,8 @@ class Timeline():
 # Classe abstraite pour représenter un événement, implémente la méthode run qui sera implémentée par les classes filles
 class Event():
 
-    def __init__(self, timeline: Timeline, timestamp: float ):
+    def __init__(self, timestamp: float ):
         self.timestamp = timestamp
-        
-        # Ajout de l'évènement à la timeline
-        timeline.append(self)
 
     @abc.abstractmethod
     def run(self):
