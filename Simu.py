@@ -1,5 +1,6 @@
 import abc
 import Utils
+from enum import Enum
 
 # Variable pour décrire la vitesse de la transmission physique d'un message, pas vrai dans la réalité.
 MESSAGE_SPEED = 0.005
@@ -8,8 +9,14 @@ WATTING_TIME = 0.00001 # Constante pour décaler un peu dans la timeline pour é
 # Timeline de la simulation, sera utilisée pour stocker les évènements
 timeline: Utils.Timeline = Utils.Timeline()
 
+#enum qui représente l'un des 2 protocoles de communication, le V2V et le V2I
+class Algorithm(Enum):
+    V2V = 0
+    V2I = 1
+
+
 class Entity:
-    def __init__(self, id: int, position: float, protocol, range: float, priority: int, buffer_capacity: int, treatment_speed: float):
+    def __init__(self, id: int, position: float, protocol, range: float, priority: int, buffer_capacity: int, treatment_speed: float, algorithm: Algorithm):
         self.id: int = id
         self.position: float = position                     # Position de l'entité sur le réseau (Position 1D)
         self.protocol: int = protocol 
@@ -19,10 +26,12 @@ class Entity:
         self.buffer: list[Message] = []                     # Buffer de l'entité
         self.treatment_speed: float = treatment_speed       # Vitesse de traitement des messages
         
+        self.algorithm: Algorithm = algorithm               # Algorithme de communication de l'entité
+        
         self.busy: bool = False # Variable pour savoir si l'entité est en traitement de message ou pas.
     
     @abc.abstractmethod          
-    def receive_message(self, timestamp: float, message, logs: bool=False):
+    def receive_message(self, timestamp: float, message, logs: bool = False):
         # Check si l'on peut stocker le message
         if(self.buffer_capacity > message.size):            
             self.buffer.append(message)
@@ -37,7 +46,7 @@ class Entity:
         
         else:
             if logs:
-                print("Message from ", message.sender.id, " to ", self.id, " is dropped : Buffer full")
+                print("Message from ", message.origin.id, " to ", self.id, " is dropped : Buffer full")
         return False
     
     @abc.abstractmethod        
@@ -46,8 +55,8 @@ class Entity:
         pass
     
 class User(Entity):
-    def __init__(self, id: int, position: float, protocol, range: float, priority: int, buffer_capacity: int, treatment_speed: float):
-        super().__init__(id, position, protocol, range, priority, buffer_capacity, treatment_speed)
+    def __init__(self, id: int, position: float, protocol, range: float, priority: int, buffer_capacity: int, treatment_speed: float, algorithm: Algorithm):
+        super().__init__(id, position, protocol, range, priority, buffer_capacity, treatment_speed, algorithm)
     
     # Fonction qui permet de modifier la position d'un utilisateur  
     # param : movement => float : à quel distance on bouge l'utilisateur de sa position actuelle.
@@ -57,17 +66,22 @@ class User(Entity):
         else:
             self.position = 0
 
+    
 class Infrastructure(Entity):
-    def __init__(self, id: int, position: float, protocol, range: float, priority: int, buffer_capacity: int, treatment_speed: float):
-        super().__init__(id, position, protocol, range, priority, buffer_capacity, treatment_speed)
+    def __init__(self, id: int, position: float, protocol, range: float, priority: int, buffer_capacity: int, treatment_speed: float, algorithm: Algorithm):
+        super().__init__(id, position, protocol, range, priority, buffer_capacity, treatment_speed, algorithm)
 
 class Message:
-    def __init__(self, id: int, sender: Entity, receiver: int, size: float, priority: int):
-        self.id = id
-        self.sender = sender
-        self.receiver = receiver
-        self.size = size
-        self.priority = priority
+    def __init__(self, id: int,  origin: Entity, sender: Entity, receiver: int, size: float, priority: int):
+        self.id = id                # Identifiant du message, surtout pour du debug
+        self.sender = sender        # Entité qui envoie le message, pas forcément l'éméteur original du message
+        self.receiver = receiver    # Entité qui doit recevoir le message
+        self.size = size            # Taille du message
+        self.priority = priority    # Priorité du message
+        
+        # Si le sender est l'entité qui a initialement émis le message, on 
+        self.origin = origin   # Entité qui a émis le message
+
 
 # Liste de l'ensemble des utilisateurs sur notre réseau
 users : list[User] = []
@@ -86,7 +100,14 @@ class Emission(Utils.Event):
         self.message = message
         
     def run(self, logs=False):
-        for entity in entities:
+        selected_entities : list[User | Infrastructure] = []
+        
+        if self.message.sender.algorithm == Algorithm.V2V:
+            selected_entities = users
+        elif self.message.sender.algorithm == Algorithm.V2I:
+            selected_entities = infrastructures
+                
+        for entity in selected_entities:
             distance = abs(self.message.sender.position - entity.position)
             
             if distance < entity.range and entity.id != self.message.sender.id:
@@ -107,7 +128,7 @@ class Reception(Utils.Event):
         
     def run(self, logs: bool=False):
         if logs:
-            print("Message from ", self.message.sender.id, " to ", self.receiver.id, " is received at time: ", self.timestamp)
+            print("Message from ", self.message.origin.id, " to ", self.receiver.id, " is received at time: ", self.timestamp)
         
         # Tentative de reception du message par l'entité.
         self.receiver.receive_message(timestamp=self.timestamp, message=self.message, logs=logs)
@@ -122,8 +143,15 @@ class Treatment(Utils.Event):
         message : Message = self.entity.buffer.pop(0)
         self.entity.buffer_capacity += message.size
         
+        # Si l'entité est une station, on fait en sorte qu'elle rediffuse le message à l'ensemble des voitures à portée
+        if isinstance(self.entity, Infrastructure):
+            if logs:
+                print("Message from ", message.origin.id, " to infrastructure ", self.entity.id, "is receveid and get retransmit")
+            timeline.append(Emission(self.timestamp, message=Message(id=0, sender=self.entity, origin=message.origin ,receiver=1, size=message.size, priority=0))) #TODO: Je suis vraiment mais VRAIMENT pas certain du timestamp
+            
+        
         if logs:
-            print("Message from ", message.sender.id, " to ", self.entity.id, " is treated at time: ", self.timestamp)
+            print("Message from ", message.origin.id, " to ", self.entity.id, " is treated at time: ", self.timestamp)
         
         # On regarde si il reste des messages dans le buffer
         if len(self.entity.buffer) > 0:
@@ -133,20 +161,21 @@ class Treatment(Utils.Event):
             self.entity.busy = False
             
 # Initialisation de la liste des utilisateurs
-entities = [
-    # Utilisateurs
-    User(id=0, position=0.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1),
-    User(id=1, position=2.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1),
-    User(id=2, position=40.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1),
-    
-    #Infrastructure(id=3, position=10.0, protocol=0, range=200, priority=0, buffer_capacity=100, treatment_speed=0.1),
+users = [
+    User(id=0, position=0.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, algorithm=Algorithm.V2I),
+    User(id=1, position=2.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, algorithm=Algorithm.V2I),
+    User(id=2, position=40.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, algorithm=Algorithm.V2I), 
+]
+
+infrastructures = [
+    Infrastructure(id=3, position=10.0, protocol=0, range=200, priority=0, buffer_capacity=100, treatment_speed=0.1, algorithm=Algorithm.V2V),
 ]
 
 # Fonction qui peuple de tentative d'emission de message dans la timeline
 def populate_simulation():
-    timeline.append(Emission(timestamp=0.0, message=Message(id=0, sender=entities[0], receiver=1, size=10, priority=0)))
-    timeline.append(Emission(timestamp=0.0001, message=Message(id=1, sender=entities[0], receiver=1, size=1, priority=0)))
-    timeline.append(Emission(timestamp=0.6, message=Message(id=2, sender=entities[2], receiver=1, size=1, priority=0)))
+    timeline.append(Emission(timestamp=0.0, message=Message(id=0, sender=users[0], origin=users[0], receiver=1, size=5, priority=0)))
+    #timeline.append(Emission(timestamp=0.0001, message=Message(id=1, sender=users[0], origin=users[1], receiver=1, size=1, priority=0)))
+    #timeline.append(Emission(timestamp=0.6, message=Message(id=2, sender=users[2], origin=users[2], receiver=1, size=1, priority=0)))
     
 def run_simulation(logs: bool = False):
     
