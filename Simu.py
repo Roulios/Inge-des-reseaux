@@ -1,5 +1,6 @@
 import abc
 import Utils
+import Metrics
 from enum import Enum
 
 # Constante pour décrire la vitesse de la transmission physique d'un message, pas vrai dans la réalité.
@@ -33,6 +34,9 @@ class Entity:
         self.algorithm: Algorithm = algorithm               # Algorithme de communication de l'entité
         
         self.busy: bool = False # Variable pour savoir si l'entité est en traitement de message ou pas.
+        
+        # Ensemble de variable servant à stocker les métriques de l'entité
+        self.metrics: Metrics.EntityMetrics = Metrics.EntityMetrics()
     
     @abc.abstractmethod          
     def receive_message(self, timestamp: float, message, logs: bool = False):
@@ -201,7 +205,7 @@ def populate_simulation():
         for i in range(0, NUMBER_OF_MOVEMENTS):
             timeline.append(Mouvement(timestamp=i, user=user))
         
-    
+# Fonction qui lance la simulation    
 def run_simulation(logs: bool = False):
     
     index: int = 0
@@ -219,8 +223,15 @@ def run_simulation(logs: bool = False):
             
         #TODO: Check for bugs
         event.run(logs=True)
-        
-# Simulation
 
+# Fonction qui calcule les métriques de toutes les entités sur le réseau
+def calculate_metrics():
+    
+    for entity in entities:
+        #TODO: Calculer les métriques de l'entité
+        entity.metrics.calculate_latency()
+
+# Simulation
 populate_simulation()
 run_simulation()
+calculate_metrics()
