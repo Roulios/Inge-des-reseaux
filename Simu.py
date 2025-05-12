@@ -8,7 +8,7 @@ MESSAGE_SPEED = 0.005
 WATTING_TIME = 0.00001 # Constante pour décaler un peu dans la timeline pour éviter les collisions.
 
 # Constante pour décrire le nombre d'évènements de mouvement dans la timeline par utilisateur = Distance parcouru
-NUMBER_OF_MOVEMENTS = 10
+NUMBER_OF_MOVEMENTS = 0
 
 
 # Timeline de la simulation, sera utilisée pour stocker les évènements
@@ -36,7 +36,7 @@ class Entity:
         self.busy: bool = False # Variable pour savoir si l'entité est en traitement de message ou pas.
         
         # Ensemble de variable servant à stocker les métriques de l'entité
-        self.metrics: Metrics.EntityMetrics = Metrics.EntityMetrics()
+        self.metrics: Metrics.EntityMetrics = Metrics.EntityMetrics(entity_id=self.id)
     
     @abc.abstractmethod          
     def receive_message(self, timestamp: float, message, logs: bool = False):
@@ -55,6 +55,10 @@ class Entity:
         else:
             if logs:
                 print("Message from ", message.origin.id, " to ", self.id, " is dropped : Buffer full")
+                
+            # Ajouter à la liste des messages dropés du sender car le buffer est plein
+            message.origin.metrics.add_message_state(Metrics.MessageState.failed_during_reception)
+            
         return False
     
     @abc.abstractmethod        
@@ -130,6 +134,10 @@ class Emission(Utils.Event):
             elif(distance > entity.range): 
                 if logs:
                     print("Message from ", self.message.sender.id, " to ", entity.id, " is out of range")
+                    
+                # Ajouter à la liste des messages dropés du sender car la distance est trop grande
+                self.message.origin.metrics.add_message_state(Metrics.MessageState.failed_during_emission)
+                
 class Reception(Utils.Event):
     def __init__(self, timestamp: float, message: Message, receiver: Entity):
         super().__init__(timestamp)
@@ -156,12 +164,20 @@ class Treatment(Utils.Event):
         # Si l'entité est une station, on fait en sorte qu'elle rediffuse le message à l'ensemble des voitures à portée
         if isinstance(self.entity, Infrastructure):
             if logs:
-                print("Message from ", message.origin.id, " to infrastructure ", self.entity.id, "is receveid and get retransmit")
-            timeline.append(Emission(self.timestamp, message=Message(id=0, sender=self.entity, origin=message.origin ,receiver=1, size=message.size, priority=0))) #TODO: Je suis vraiment mais VRAIMENT pas certain du timestamp
+                print("Message from ", message.origin.id, " to infrastructure ", self.entity.id, "is receveid and get retransmit at time: ", self.timestamp)
+                
+            #TODO: Je suis vraiment mais VRAIMENT pas certain du timestamp
+            timeline.append(Emission(self.timestamp, message=Message(id=0, sender=self.entity, origin=message.origin ,receiver=message.receiver, size=message.size, priority=0)))
             
-        
-        if logs:
-            print("Message from ", message.origin.id, " to ", self.entity.id, " is treated at time: ", self.timestamp)
+        else:
+            if logs:
+                print("Message from ", message.origin.id, " to ", self.entity.id, " is received and get treated at time: ", self.timestamp)
+                
+            # On ajoute à la liste des messages reçus
+            self.entity.metrics.add_message_state(Metrics.MessageState.received)
+            
+        #if logs:
+        #    print("Message from ", message.origin.id, " to ", self.entity.id, " is treated at time: ", self.timestamp)
         
         # On regarde si il reste des messages dans le buffer
         if len(self.entity.buffer) > 0:
@@ -185,9 +201,9 @@ class Mouvement(Utils.Event):
             
 # Initialisation de la liste des utilisateurs
 users = [
-    User(id=0, position=0.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, mouvement_speed=1, algorithm=Algorithm.V2I),
-    User(id=1, position=2.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, mouvement_speed=2, algorithm=Algorithm.V2I),
-    User(id=2, position=40.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, mouvement_speed=3, algorithm=Algorithm.V2I), 
+    User(id=0, position=0.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, mouvement_speed=1, algorithm=Algorithm.V2V),
+    User(id=1, position=2.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, mouvement_speed=2, algorithm=Algorithm.V2V),
+    User(id=2, position=40.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, mouvement_speed=3, algorithm=Algorithm.V2V), 
 ]
 
 infrastructures = [
@@ -225,13 +241,16 @@ def run_simulation(logs: bool = False):
         event.run(logs=True)
 
 # Fonction qui calcule les métriques de toutes les entités sur le réseau
-def calculate_metrics():
+def calculate_metrics(logs: bool = False):
     
-    for entity in entities:
-        #TODO: Calculer les métriques de l'entité
-        entity.metrics.calculate_latency()
+    for entity in users + infrastructures:
+        if logs:
+            print("Calcul des métriques de l'entité ", entity.id)
+        
+        entity.metrics.actualise_metrics(logs)
 
 # Simulation
 populate_simulation()
 run_simulation()
-calculate_metrics()
+
+calculate_metrics(logs=False)
