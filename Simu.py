@@ -2,9 +2,13 @@ import abc
 import Utils
 from enum import Enum
 
-# Variable pour décrire la vitesse de la transmission physique d'un message, pas vrai dans la réalité.
+# Constante pour décrire la vitesse de la transmission physique d'un message, pas vrai dans la réalité.
 MESSAGE_SPEED = 0.005
 WATTING_TIME = 0.00001 # Constante pour décaler un peu dans la timeline pour éviter les collisions.
+
+# Constante pour décrire le nombre d'évènements de mouvement dans la timeline par utilisateur = Distance parcouru
+NUMBER_OF_MOVEMENTS = 10
+
 
 # Timeline de la simulation, sera utilisée pour stocker les évènements
 timeline: Utils.Timeline = Utils.Timeline()
@@ -55,14 +59,16 @@ class Entity:
         pass
     
 class User(Entity):
-    def __init__(self, id: int, position: float, protocol, range: float, priority: int, buffer_capacity: int, treatment_speed: float, algorithm: Algorithm):
+    def __init__(self, id: int, position: float, protocol, range: float, priority: int, buffer_capacity: int, treatment_speed: float, mouvement_speed: float, algorithm: Algorithm):
         super().__init__(id, position, protocol, range, priority, buffer_capacity, treatment_speed, algorithm)
+        self.mouvement_speed: float = mouvement_speed       # Vitesse de mouvement de l'entité  
+
     
     # Fonction qui permet de modifier la position d'un utilisateur  
     # param : movement => float : à quel distance on bouge l'utilisateur de sa position actuelle.
-    def move(self, movement: float):
-        if self.position + movement >= 0:
-            self.position = self.position + movement
+    def move(self):
+        if self.position + self.mouvement_speed >= 0:
+            self.position = self.position + self.mouvement_speed
         else:
             self.position = 0
 
@@ -160,11 +166,24 @@ class Treatment(Utils.Event):
         else:
             self.entity.busy = False
             
+# Event de mouvement d'un utilisateur          
+class Mouvement(Utils.Event):
+    def __init__(self, timestamp: float, user: User):
+        super().__init__(timestamp)
+        self.user = user
+        
+    def run(self, logs: bool=False):
+        if logs:
+            print("User ", self.user.id, " is moving at time: ", self.timestamp, "and is now at position: ", self.user.position)
+        
+        # On bouge l'utilisateur à la vitesse qu'il possède
+        self.user.move()
+            
 # Initialisation de la liste des utilisateurs
 users = [
-    User(id=0, position=0.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, algorithm=Algorithm.V2I),
-    User(id=1, position=2.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, algorithm=Algorithm.V2I),
-    User(id=2, position=40.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, algorithm=Algorithm.V2I), 
+    User(id=0, position=0.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, mouvement_speed=1, algorithm=Algorithm.V2I),
+    User(id=1, position=2.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, mouvement_speed=2, algorithm=Algorithm.V2I),
+    User(id=2, position=40.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, mouvement_speed=3, algorithm=Algorithm.V2I), 
 ]
 
 infrastructures = [
@@ -176,6 +195,12 @@ def populate_simulation():
     timeline.append(Emission(timestamp=0.0, message=Message(id=0, sender=users[0], origin=users[0], receiver=1, size=5, priority=0)))
     #timeline.append(Emission(timestamp=0.0001, message=Message(id=1, sender=users[0], origin=users[1], receiver=1, size=1, priority=0)))
     #timeline.append(Emission(timestamp=0.6, message=Message(id=2, sender=users[2], origin=users[2], receiver=1, size=1, priority=0)))
+    
+    # Boucle peuplant l'ensemble des mouvements des véhicules
+    for user in users:
+        for i in range(0, NUMBER_OF_MOVEMENTS):
+            timeline.append(Mouvement(timestamp=i, user=user))
+        
     
 def run_simulation(logs: bool = False):
     
