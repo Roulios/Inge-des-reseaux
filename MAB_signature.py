@@ -1,17 +1,24 @@
+import abc
+
 class MAB:
-    def __init__(n_arms:int,weight:(float)):
+    def __init__(self,n_arms:int,weight:(float)):
         """n_arms: le nombre de bras
         weight.len() ==  N_metrics
         """
-        self.arms = [0]*n_arms
+        self.n_arms = n_arms
+        self.counts = [0] * n_arms
+        self.values = [0.] * n_arms
 
-    def select_arm()->int:
+
+    @abc.abstractmethod
+    def select_arm(self)->int:
         """give the choosen arm given the actual status 
         @return integer between 1 and n_arms(included) corresponding to the chooseen arm
         """
         ...
     
-    def update(metrics:tupple,chosen_arm:int)->None:
+    @abc.abstractmethod
+    def update(self,metrics:tupple,chosen_arm:int)->None:
         """update the status of the bandit
         """
         ...
