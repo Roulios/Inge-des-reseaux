@@ -1,5 +1,8 @@
 class MAB:
-    def __init__(n_arms:int):
+    def __init__(n_arms:int,weight:(float)):
+        """n_arms: le nombre de bras
+        weight.len() ==  N_metrics
+        """
         self.arms = [0]*n_arms
 
     def select_arm()->int:
@@ -8,7 +11,7 @@ class MAB:
         """
         ...
     
-    def update(reward:float,chosen_arm:int)->None:
+    def update(metrics:tupple,chosen_arm:int)->None:
         """update the status of the bandit
         """
         ...
