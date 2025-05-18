@@ -10,6 +10,9 @@ WATTING_TIME = 0.00001 # Constante pour décaler un peu dans la timeline pour é
 # Constante pour décrire le nombre d'évènements de mouvement dans la timeline par utilisateur = Distance parcouru
 NUMBER_OF_MOVEMENTS = 0
 
+# Temps de la simulation en secondes
+SIMULATION_TIME = 100.0
+
 
 # Timeline de la simulation, sera utilisée pour stocker les évènements
 timeline: Utils.Timeline = Utils.Timeline()
@@ -105,6 +108,27 @@ infrastructures : list[Infrastructure] = []
 
 entities : list[Entity] = []
        
+       
+# Event utilisé uniquement pour rendre le peuplement d'event de la simulation plus simple
+# L'objectif est de détecter quels entité sont à une distance suffisament proche pour recevoir le message
+# On évite ainsi d'envoyer des events emissions pour des objets qui sont situé à plusieurs kilomètres de distance
+class TryEmission(Utils.Event):
+    def __init__(self, timestamp: float, entity: Entity):
+        super().__init__(timestamp)
+        self.entity = entity
+        
+    def run(self, logs: bool=False):
+        receivers : list[Entity] = []
+        
+        # Selection de la liste des entités qui peuvent recevoir le message (on regarde la distance entre l'émetteur et les autres entités)
+        if self.entity.algorithm == Algorithm.V2V:
+            receivers = list(filter(lambda x: (x.id != self.entity.id) and (abs(x.position - self.entity.position) < self.entity.range) , users))
+        elif self.entity.algorithm == Algorithm.V2I:
+            receivers = list(filter(lambda x: (x.id != self.entity.id) and (abs(x.position - self.entity.position) < self.entity.range) , infrastructures))            
+        
+        # Ajout dans la timeline une tentative d'emission d'un message à chaque candidat
+        for receiver in receivers:
+            timeline.append(Emission(timestamp=self.timestamp, message=Message(id=0, sender=self.entity, origin=self.entity, receiver=receiver.id, size=1, priority=self.entity.priority)))
 
 # Event emission d'un message.
 class Emission(Utils.Event):
@@ -167,7 +191,7 @@ class Treatment(Utils.Event):
                 print("Message from ", message.origin.id, " to infrastructure ", self.entity.id, "is receveid and get retransmit at time: ", self.timestamp)
                 
             #TODO: Je suis vraiment mais VRAIMENT pas certain du timestamp
-            timeline.append(Emission(self.timestamp, message=Message(id=0, sender=self.entity, origin=message.origin ,receiver=message.receiver, size=message.size, priority=0)))
+            timeline.append(Emission(self.timestamp, message=Message(id=0, sender=self.entity, origin=message.origin ,receiver=message.receiver, size=message.size, priority=message.priority)))
             
         else:
             if logs:
@@ -193,7 +217,7 @@ class Mouvement(Utils.Event):
         self.user = user
         
     def run(self, logs: bool=False):
-        if logs:
+        if not logs:
             print("User ", self.user.id, " is moving at time: ", self.timestamp, "and is now at position: ", self.user.position)
         
         # On bouge l'utilisateur à la vitesse qu'il possède
@@ -218,7 +242,15 @@ def populate_simulation():
     
     # Boucle peuplant l'ensemble des mouvements des véhicules
     for user in users:
-        for i in range(0, NUMBER_OF_MOVEMENTS):
+        i = 0
+        while i < SIMULATION_TIME:
+            i = i+10
+
+            # Envoie du message à l'ensemble des utilisateurs sauf l'éméteur
+            # TODO: Voir si y'a mieux, beaucoup d'evènements dans la timeline
+            timeline.append(TryEmission(timestamp=i, entity=user))                
+            
+            # Mouvement de l'utilisateur
             timeline.append(Mouvement(timestamp=i, user=user))
         
 # Fonction qui lance la simulation    
