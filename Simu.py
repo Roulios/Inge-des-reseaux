@@ -1,6 +1,7 @@
 import abc
 import Utils
 import Metrics
+import random
 from enum import Enum
 
 # Constante pour décrire la vitesse de la transmission physique d'un message, pas vrai dans la réalité.
@@ -12,6 +13,12 @@ NUMBER_OF_MOVEMENTS = 0
 
 # Temps de la simulation en secondes
 SIMULATION_TIME = 100.0
+
+# Probabilité de succès d'une emission entre 2 véhicules (ratio entre la distance et la porté pour laquelle on part du principe que il n'y aura pas d'échec)
+V2V_BASE_SUCCES_PROBABILITY = 0.5
+
+# Probabilité de succès d'une emission entre un véhicule et une infrastructure
+V2I_BASE_SUCCES_PROBABILITY = 0.8
 
 
 # Timeline de la simulation, sera utilisée pour stocker les évènements
@@ -128,16 +135,50 @@ class TryEmission(Utils.Event):
         
         # Ajout dans la timeline une tentative d'emission d'un message à chaque candidat
         for receiver in receivers:
-            timeline.append(Emission(timestamp=self.timestamp, message=Message(id=0, sender=self.entity, origin=self.entity, receiver=receiver.id, size=1, priority=self.entity.priority)))
+            # Calcul de la probabilité de succès d'une émission. Plus la distance est grande, plus la probabilité de succès est faible. V2I est censé être plus fiable.
+            if self.entity.algorithm == Algorithm.V2V:
+                fail_probability : float = abs(self.entity.position - receiver.position) / self.entity.range - V2V_BASE_SUCCES_PROBABILITY
+            elif self.entity.algorithm == Algorithm.V2I:
+                fail_probability : float = abs(self.entity.position - receiver.position) / self.entity.range - V2I_BASE_SUCCES_PROBABILITY
+                
+            
+            
+            timeline.append(Emission(timestamp=self.timestamp, fail_probability=fail_probability, message=Message(id=0, sender=self.entity, origin=self.entity, receiver=receiver.id, size=1, priority=self.entity.priority)))
 
 # Event emission d'un message.
 class Emission(Utils.Event):
     
-    def __init__(self, timestamp: float, message: Message):
+    def __init__(self, timestamp: float, message: Message, fail_probability: float):
         super().__init__(timestamp)
         self.message = message
+        self.fail_probability = fail_probability
         
     def run(self, logs=False):
+    
+        if logs:
+            print("Try sending message from ", self.message.origin.id, " to ", self.message.receiver, " with probability of success: ", self.fail_probability*100, "%")
+             
+        # Traitement de la probabilité de succès d'une emission
+        if random.random() > self.fail_probability:
+            if logs:
+                print("Message from ", self.message.origin.id, " to ", self.message.receiver, " is sent at time: ", self.timestamp)
+            
+            self.message.origin.metrics.add_message_state(Metrics.MessageState.received)
+            
+            # TODO: Faire un truc propre bruh
+            distance = abs(self.message.sender.position - self.message.receiver)
+            receiver = list(filter(lambda x: x.id == self.message.receiver, users + infrastructures))[0]
+            
+            # On lance un event reception pour chaque entité qui est dans la portée de l'émetteur
+            timeline.append(Reception(timestamp=self.timestamp + distance*MESSAGE_SPEED, message=self.message, receiver=receiver))
+
+        else:
+            if logs:
+                print("Message from ", self.message.origin.id, " to ", self.message.receiver, " is dropped : Failed during emission")
+                
+            # Ajouter à la liste des messages dropés du sender car l'émission a échoué
+            self.message.origin.metrics.add_message_state(Metrics.MessageState.failed_during_emission)
+        """
         selected_entities : list[User | Infrastructure] = []
         
         if self.message.sender.algorithm == Algorithm.V2V:
@@ -161,7 +202,7 @@ class Emission(Utils.Event):
                     
                 # Ajouter à la liste des messages dropés du sender car la distance est trop grande
                 self.message.origin.metrics.add_message_state(Metrics.MessageState.failed_during_emission)
-                
+        """     
 class Reception(Utils.Event):
     def __init__(self, timestamp: float, message: Message, receiver: Entity):
         super().__init__(timestamp)
@@ -190,8 +231,11 @@ class Treatment(Utils.Event):
             if logs:
                 print("Message from ", message.origin.id, " to infrastructure ", self.entity.id, "is receveid and get retransmit at time: ", self.timestamp)
                 
+            # Calcul de la probabilité de succès de la réémission
+            fail_probability : float = abs(self.entity.position - message.sender.position) / self.entity.range - V2I_BASE_SUCCES_PROBABILITY
+                
             #TODO: Je suis vraiment mais VRAIMENT pas certain du timestamp
-            timeline.append(Emission(self.timestamp, message=Message(id=0, sender=self.entity, origin=message.origin ,receiver=message.receiver, size=message.size, priority=message.priority)))
+            timeline.append(Emission(self.timestamp, fail_probability=fail_probability, message=Message(id=0, sender=self.entity, origin=message.origin ,receiver=message.receiver, size=message.size, priority=message.priority)))
             
         else:
             if logs:
@@ -236,7 +280,7 @@ infrastructures = [
 
 # Fonction qui peuple de tentative d'emission de message dans la timeline
 def populate_simulation():
-    timeline.append(Emission(timestamp=0.0, message=Message(id=0, sender=users[0], origin=users[0], receiver=1, size=5, priority=0)))
+    #timeline.append(Emission(timestamp=0.0, message=Message(id=0, sender=users[0], origin=users[0], receiver=1, size=5, priority=0)))
     #timeline.append(Emission(timestamp=0.0001, message=Message(id=1, sender=users[0], origin=users[1], receiver=1, size=1, priority=0)))
     #timeline.append(Emission(timestamp=0.6, message=Message(id=2, sender=users[2], origin=users[2], receiver=1, size=1, priority=0)))
     
@@ -244,7 +288,7 @@ def populate_simulation():
     for user in users:
         i = 0
         while i < SIMULATION_TIME:
-            i = i+10
+            i = i + 1
 
             # Envoie du message à l'ensemble des utilisateurs sauf l'éméteur
             # TODO: Voir si y'a mieux, beaucoup d'evènements dans la timeline
