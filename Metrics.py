@@ -53,3 +53,13 @@ class EntityMetrics():
         if logs:
             print("Latence :", self.metrics['latency'])
             print("Pourcentage de paquets reçus :", self.metrics['received_percentage'],"%")
+            
+    def show_metrics(self, verbose: bool = False):
+        print("Entity ID :", self.entity_id)
+        print("Métriques :")
+        for key, value in self.metrics.items():
+            print(f"{key} : {value}")
+            
+        if verbose:
+            print("Liste des latences :", self.latency_list)
+            print("Liste des états des messages :", self.message_state_list)
