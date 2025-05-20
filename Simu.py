@@ -13,7 +13,7 @@ WATTING_TIME = 0.00001 # Constante pour décaler un peu dans la timeline pour é
 NUMBER_OF_MOVEMENTS = 0
 
 # Temps de la simulation en secondes
-SIMULATION_TIME = 100.0
+SIMULATION_TIME = 10.0
 
 # Probabilité de succès d'une emission entre 2 véhicules (ratio entre la distance et la porté pour laquelle on part du principe que il n'y aura pas d'échec)
 V2V_BASE_SUCCES_PROBABILITY = 0.5
@@ -283,7 +283,7 @@ class ChooseAlgorithm(Utils.Event):
 users = [
     User(id=0, position=0.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, mouvement_speed=1, algorithm=Algorithm.V2I),
     User(id=1, position=2.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, mouvement_speed=2, algorithm=Algorithm.V2I),
-    User(id=2, position=40.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, mouvement_speed=3, algorithm=Algorithm.V2I), 
+    User(id=2, position=4.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, mouvement_speed=3, algorithm=Algorithm.V2I), 
 ]
 
 infrastructures = [
@@ -332,6 +332,12 @@ def run_simulation(logs: bool = False):
             
         #TODO: Check for bugs
         event.run(logs=True)
+        
+    # Fin de la simulation, check les metriques pour du debug
+    if logs:
+        print("=============== Fin de la simulation ===============")
+        for entity in users + infrastructures:
+            entity.metrics.show_metrics(verbose=True)
 
 # Fonction qui calcule les métriques de toutes les entités sur le réseau
 def calculate_metrics(logs: bool = False):
@@ -344,6 +350,6 @@ def calculate_metrics(logs: bool = False):
 
 # Simulation
 populate_simulation()
-run_simulation()
+run_simulation(logs=True)
 
 calculate_metrics(logs=False)
