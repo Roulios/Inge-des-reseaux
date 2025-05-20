@@ -243,8 +243,9 @@ class Treatment(Utils.Event):
             if logs:
                 print("Message from ", message.sender.id, " to ", self.entity.id, " is received and get treated at time: ", self.timestamp)
                 
-            # On ajoute à la liste des messages reçus de l'émetteur
+            # On ajoute à la liste des messages reçus de l'émetteur et la latence calculé
             message.origin.metrics.add_message_state(Metrics.MessageState.received)
+            message.origin.metrics.add_latency(self.timestamp - message.sent_from_origin_at)
             
             
         #if logs:
