@@ -14,7 +14,7 @@ class EntityMetrics():
     def __init__(self, entity_id: int):
         self.metrics = {
             "sent": 0,
-            "received": 0,
+            "received": 0,# comme des ack mais en
             "latency": 0,
             "received_percentage": 0
         }
