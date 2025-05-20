@@ -282,9 +282,9 @@ class ChooseAlgorithm(Utils.Event):
 
     def run(self, logs: bool=False):
         self.mab.update(self.entity.metrics,self.curent_algo) 
-        self.curent_algo = self.mab.select_arm()
+        self.entity.algorithm = self.mab.select_arm()
         if logs:
-            print(f"choix de l'algorithme {self.curent_algo} at {timestamp}")          
+            print(f"choix de l'algorithme {self.entity.algorithm} at {self.timestamp}")          
 # Initialisation de la liste des utilisateurs
 users = [
     User(id=0, position=0.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, mouvement_speed=1, algorithm=Algorithm.V2I),
