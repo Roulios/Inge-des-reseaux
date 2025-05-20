@@ -1,5 +1,6 @@
 import abc
 
+from Metrics import Metrics
 class MAB:
     def __init__(self,n_arms:int,weight:(float)):
         """n_arms: le nombre de bras
@@ -17,8 +18,7 @@ class MAB:
         """
         ...
     
-    @abc.abstractmethod
-    def update(self,metrics:tupple,chosen_arm:int)->None:
+    def update(metrics:Metrics,chosen_arm:int)->None:
         """update the status of the bandit
         """
         ...

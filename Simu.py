@@ -3,6 +3,7 @@ import Utils
 import Metrics
 import random
 from enum import Enum
+from MAB_signature import MAB
 
 # Constante pour décrire la vitesse de la transmission physique d'un message, pas vrai dans la réalité.
 MESSAGE_SPEED = 0.005
@@ -197,9 +198,9 @@ class Emission(Utils.Event):
             
             elif(distance > entity.range): 
                 if logs:
-                    print("Message from ", self.message.sender.id, " to ", entity.id, " is out of range")
+                    print("Message from ", self.messagsender.id, " to ", entity.id, " is out of range")
                     
-                # Ajouter à la liste des messages dropés du sender car la distance est trop grande
+                # Ajouter à la liste des messages dropés du sende.er car la distance est trop grande
                 self.message.origin.metrics.add_message_state(Metrics.MessageState.failed_during_emission)
         """     
 class Reception(Utils.Event):
@@ -270,7 +271,20 @@ class Movement(Utils.Event):
         
         # On bouge l'utilisateur à la vitesse qu'il possède
         self.user.move()
-            
+# Event pour declencher le choix d'un algorithme
+class ChooseAlgorithm(Utils.Event):
+    def __init__(self, timestamp: float, mab: MAB, entity : Entity):
+        super().__init__(timestamp=timestamp)
+        self.mab = mab
+        self.entity = entity
+        self.entity.algorithm = MAB.select_arm()
+        
+
+    def run(self, logs: bool=False):
+        self.mab.update(self.entity.metrics,self.curent_algo) 
+        self.curent_algo = self.mab.select_arm()
+        if logs:
+            print(f"choix de l'algorithme {self.curent_algo} at {timestamp}")          
 # Initialisation de la liste des utilisateurs
 users = [
     User(id=0, position=0.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, mouvement_speed=1, algorithm=Algorithm.V2I),
