@@ -96,15 +96,16 @@ class Infrastructure(Entity):
         super().__init__(id, position, protocol, range, priority, buffer_capacity, treatment_speed, algorithm)
 
 class Message:
-    def __init__(self, id: int,  origin: Entity, sender: Entity, receiver: int, size: float, priority: int):
+    def __init__(self, id: int,  origin: Entity, sender: Entity, receiver: int, size: float, priority: int, sent_from_origin_at: float):
         self.id = id                # Identifiant du message, surtout pour du debug
         self.sender = sender        # Entité qui envoie le message, pas forcément l'éméteur original du message
         self.receiver = receiver    # Entité qui doit recevoir le message
         self.size = size            # Taille du message
         self.priority = priority    # Priorité du message
         
-        # Si le sender est l'entité qui a initialement émis le message, on 
         self.origin = origin   # Entité qui a émis le message
+        self.sent_from_origin_at =  sent_from_origin_at # Timestamp d'envoie du message
+
 
 
 # Liste de l'ensemble des utilisateurs sur notre réseau
@@ -143,7 +144,7 @@ class TryEmission(Utils.Event):
                 
             
             
-            timeline.append(Emission(timestamp=self.timestamp, fail_probability=fail_probability, message=Message(id=0, sender=self.entity, origin=self.entity, receiver=receiver.id, size=1, priority=self.entity.priority)))
+            timeline.append(Emission(timestamp=self.timestamp, fail_probability=fail_probability, message=Message(id=0, sender=self.entity, origin=self.entity, receiver=receiver.id, size=1, priority=self.entity.priority, sent_from_origin_at=self.timestamp)))
 
 # Event emission d'un message.
 class Emission(Utils.Event):
@@ -154,7 +155,7 @@ class Emission(Utils.Event):
         self.fail_probability = fail_probability
         
     def run(self, logs=False):
-    
+                
         if logs:
             print("Try sending message from ", self.message.origin.id, " to ", self.message.receiver, " with probability of fail: ", self.fail_probability*100, "%")
              
@@ -162,9 +163,7 @@ class Emission(Utils.Event):
         if random.random() > self.fail_probability:
             if logs:
                 print("Message from ", self.message.origin.id, " to ", self.message.receiver, " is sent at time: ", self.timestamp)
-            
-            self.message.origin.metrics.add_message_state(Metrics.MessageState.received)
-            
+                        
             # TODO: Faire un truc propre bruh
             distance = abs(self.message.sender.position - self.message.receiver)
             receiver = list(filter(lambda x: x.id == self.message.receiver, users + infrastructures))[0]
@@ -233,16 +232,20 @@ class Treatment(Utils.Event):
                 
             # Calcul de la probabilité de succès de la réémission
             fail_probability : float = abs(self.entity.position - message.sender.position) / self.entity.range - V2I_BASE_SUCCES_PROBABILITY
-                
-            #TODO: Je suis vraiment mais VRAIMENT pas certain du timestamp
-            timeline.append(Emission(self.timestamp, fail_probability=fail_probability, message=Message(id=0, sender=self.entity, origin=message.origin ,receiver=message.receiver, size=message.size, priority=message.priority)))
             
+            # On lance une tentative d'emission pour tout les utilisateurs à portée de l'infrastructure
+            receivers : list[User] = list(filter(lambda x: (x.id != self.entity.id) and (abs(x.position - self.entity.position) < self.entity.range) , users))
+            for receiver in receivers:
+                # On lance une tentative d'emission pour chaque utilisateur à portée de l'infrastructure
+                timeline.append(Emission(timestamp=self.timestamp + WATTING_TIME, fail_probability=fail_probability, message=Message(id=0, sender=self.entity, origin=message.origin ,receiver=receiver.id, size=message.size, priority=message.priority, sent_from_origin_at=message.sent_from_origin_at)))
+           
         else:
             if logs:
-                print("Message from ", message.origin.id, " to ", self.entity.id, " is received and get treated at time: ", self.timestamp)
+                print("Message from ", message.sender.id, " to ", self.entity.id, " is received and get treated at time: ", self.timestamp)
                 
-            # On ajoute à la liste des messages reçus
-            self.entity.metrics.add_message_state(Metrics.MessageState.received)
+            # On ajoute à la liste des messages reçus de l'émetteur
+            message.origin.metrics.add_message_state(Metrics.MessageState.received)
+            
             
         #if logs:
         #    print("Message from ", message.origin.id, " to ", self.entity.id, " is treated at time: ", self.timestamp)
@@ -255,7 +258,7 @@ class Treatment(Utils.Event):
             self.entity.busy = False
             
 # Event de mouvement d'un utilisateur          
-class Mouvement(Utils.Event):
+class Movement(Utils.Event):
     def __init__(self, timestamp: float, user: User):
         super().__init__(timestamp)
         self.user = user
@@ -269,9 +272,9 @@ class Mouvement(Utils.Event):
             
 # Initialisation de la liste des utilisateurs
 users = [
-    User(id=0, position=0.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, mouvement_speed=1, algorithm=Algorithm.V2V),
-    User(id=1, position=2.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, mouvement_speed=2, algorithm=Algorithm.V2V),
-    User(id=2, position=40.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, mouvement_speed=3, algorithm=Algorithm.V2V), 
+    User(id=0, position=0.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, mouvement_speed=1, algorithm=Algorithm.V2I),
+    User(id=1, position=2.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, mouvement_speed=2, algorithm=Algorithm.V2I),
+    User(id=2, position=40.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, mouvement_speed=3, algorithm=Algorithm.V2I), 
 ]
 
 infrastructures = [
@@ -283,7 +286,7 @@ def populate_simulation():
     #timeline.append(Emission(timestamp=0.0, message=Message(id=0, sender=users[0], origin=users[0], receiver=1, size=5, priority=0)))
     #timeline.append(Emission(timestamp=0.0001, message=Message(id=1, sender=users[0], origin=users[1], receiver=1, size=1, priority=0)))
     #timeline.append(Emission(timestamp=0.6, message=Message(id=2, sender=users[2], origin=users[2], receiver=1, size=1, priority=0)))
-    
+        
     # Boucle peuplant l'ensemble des mouvements des véhicules
     for user in users:
         i = 0
@@ -295,7 +298,7 @@ def populate_simulation():
             timeline.append(TryEmission(timestamp=i, entity=user))                
             
             # Mouvement de l'utilisateur
-            timeline.append(Mouvement(timestamp=i, user=user))
+            timeline.append(Movement(timestamp=i, user=user))
         
 # Fonction qui lance la simulation    
 def run_simulation(logs: bool = False):
