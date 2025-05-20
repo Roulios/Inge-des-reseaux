@@ -156,7 +156,7 @@ class Emission(Utils.Event):
     def run(self, logs=False):
     
         if logs:
-            print("Try sending message from ", self.message.origin.id, " to ", self.message.receiver, " with probability of success: ", self.fail_probability*100, "%")
+            print("Try sending message from ", self.message.origin.id, " to ", self.message.receiver, " with probability of fail: ", self.fail_probability*100, "%")
              
         # Traitement de la probabilité de succès d'une emission
         if random.random() > self.fail_probability:
