@@ -25,14 +25,8 @@ V2I_BASE_SUCCES_PROBABILITY = 0.8
 # Timeline de la simulation, sera utilisée pour stocker les évènements
 timeline: Utils.Timeline = Utils.Timeline()
 
-#enum qui représente l'un des 2 protocoles de communication, le V2V et le V2I
-class Algorithm(Enum):
-    V2V = 0
-    V2I = 1
-
-
 class Entity:
-    def __init__(self, id: int, position: float, protocol, range: float, priority: int, buffer_capacity: int, treatment_speed: float, algorithm: Algorithm):
+    def __init__(self, id: int, position: float, protocol, range: float, priority: int, buffer_capacity: int, treatment_speed: float, algorithm: Utils.Algorithm):
         self.id: int = id
         self.position: float = position                     # Position de l'entité sur le réseau (Position 1D)
         self.protocol: int = protocol 
@@ -42,7 +36,7 @@ class Entity:
         self.buffer: list[Message] = []                     # Buffer de l'entité
         self.treatment_speed: float = treatment_speed       # Vitesse de traitement des messages
         
-        self.algorithm: Algorithm = algorithm               # Algorithme de communication de l'entité
+        self.algorithm: Utils.Algorithm = algorithm               # Algorithme de communication de l'entité
         
         self.busy: bool = False # Variable pour savoir si l'entité est en traitement de message ou pas.
         
@@ -78,7 +72,7 @@ class Entity:
         pass
     
 class User(Entity):
-    def __init__(self, id: int, position: float, protocol, range: float, priority: int, buffer_capacity: int, treatment_speed: float, mouvement_speed: float, algorithm: Algorithm):
+    def __init__(self, id: int, position: float, protocol, range: float, priority: int, buffer_capacity: int, treatment_speed: float, mouvement_speed: float, algorithm: Utils.Algorithm):
         super().__init__(id, position, protocol, range, priority, buffer_capacity, treatment_speed, algorithm)
         self.mouvement_speed: float = mouvement_speed       # Vitesse de mouvement de l'entité  
 
@@ -93,7 +87,7 @@ class User(Entity):
 
     
 class Infrastructure(Entity):
-    def __init__(self, id: int, position: float, protocol, range: float, priority: int, buffer_capacity: int, treatment_speed: float, algorithm: Algorithm):
+    def __init__(self, id: int, position: float, protocol, range: float, priority: int, buffer_capacity: int, treatment_speed: float, algorithm: Utils.Algorithm):
         super().__init__(id, position, protocol, range, priority, buffer_capacity, treatment_speed, algorithm)
 
 class Message:
@@ -130,17 +124,17 @@ class TryEmission(Utils.Event):
         receivers : list[Entity] = []
         
         # Selection de la liste des entités qui peuvent recevoir le message (on regarde la distance entre l'émetteur et les autres entités)
-        if self.entity.algorithm == Algorithm.V2V:
+        if self.entity.algorithm == Utils.Algorithm.V2V:
             receivers = list(filter(lambda x: (x.id != self.entity.id) and (abs(x.position - self.entity.position) < self.entity.range) , users))
-        elif self.entity.algorithm == Algorithm.V2I:
+        elif self.entity.algorithm == Utils.Algorithm.V2I:
             receivers = list(filter(lambda x: (x.id != self.entity.id) and (abs(x.position - self.entity.position) < self.entity.range) , infrastructures))            
         
         # Ajout dans la timeline une tentative d'emission d'un message à chaque candidat
         for receiver in receivers:
             # Calcul de la probabilité de succès d'une émission. Plus la distance est grande, plus la probabilité de succès est faible. V2I est censé être plus fiable.
-            if self.entity.algorithm == Algorithm.V2V:
+            if self.entity.algorithm == Utils.Algorithm.V2V:
                 fail_probability : float = abs(self.entity.position - receiver.position) / self.entity.range - V2V_BASE_SUCCES_PROBABILITY
-            elif self.entity.algorithm == Algorithm.V2I:
+            elif self.entity.algorithm == Utils.Algorithm.V2I:
                 fail_probability : float = abs(self.entity.position - receiver.position) / self.entity.range - V2I_BASE_SUCCES_PROBABILITY
                 
             
@@ -181,9 +175,9 @@ class Emission(Utils.Event):
         """
         selected_entities : list[User | Infrastructure] = []
         
-        if self.message.sender.algorithm == Algorithm.V2V:
+        if self.message.sender.algorithm == Utils.Algorithm.V2V:
             selected_entities = users
-        elif self.message.sender.algorithm == Algorithm.V2I:
+        elif self.message.sender.algorithm == Utils.Algorithm.V2I:
             selected_entities = infrastructures
                 
         for entity in selected_entities:
