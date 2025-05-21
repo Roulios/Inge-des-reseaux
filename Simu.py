@@ -308,6 +308,11 @@ def populate_simulation():
             
             # Mouvement de l'utilisateur
             timeline.append(Movement(timestamp=i, user=user))
+
+            if(not i%10):
+                timeline.append(ChooseAlgorithm)
+
+
         
 # Fonction qui lance la simulation    
 def run_simulation(logs: bool = False):
