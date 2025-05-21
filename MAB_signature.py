@@ -1,5 +1,5 @@
 import abc
-from Simu import Algorithm
+import Utils
 from Metrics import Metrics
 class MAB:
     def __init__(self,n_arms:int,weight:(float)):
@@ -12,7 +12,7 @@ class MAB:
 
 
     @abc.abstractmethod
-    def select_arm(self)->Algorithm:
+    def select_arm(self)->Utils.Algorithm:
         """give the choosen arm given the actual status 
         @return integer between 1 and n_arms(included) corresponding to the chooseen arm
         """
