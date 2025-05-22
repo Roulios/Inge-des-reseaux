@@ -1,6 +1,6 @@
 import abc
 import Utils
-from Metrics import Metrics
+from Metrics import EntityMetrics as Metrics
 class MAB:
     def __init__(self,n_arms:int,weight:(float)):
         """n_arms: le nombre de bras

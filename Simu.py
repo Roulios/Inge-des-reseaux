@@ -268,7 +268,7 @@ class Movement(Utils.Event):
 # Event pour declencher le choix d'un algorithme
 class ChooseAlgorithm(Utils.Event):
     def __init__(self, timestamp: float, mab: MAB, entity : Entity):
-        super().__init__(timestamp=timestamp)
+        super().__init__(timestamp)
         self.mab = mab
         self.entity = entity
         self.entity.algorithm = MAB.select_arm()
@@ -281,13 +281,13 @@ class ChooseAlgorithm(Utils.Event):
             print(f"choix de l'algorithme {self.entity.algorithm} at {self.timestamp}")          
 # Initialisation de la liste des utilisateurs
 users = [
-    User(id=0, position=0.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, mouvement_speed=1, algorithm=Algorithm.V2I),
-    User(id=1, position=2.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, mouvement_speed=2, algorithm=Algorithm.V2I),
-    User(id=2, position=4.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, mouvement_speed=3, algorithm=Algorithm.V2I), 
+    User(id=0, position=0.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, mouvement_speed=1, algorithm=Utils.Algorithm.V2I),
+    User(id=1, position=2.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, mouvement_speed=2, algorithm=Utils.Algorithm.V2I),
+    User(id=2, position=4.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, mouvement_speed=3, algorithm=Utils.Algorithm.V2I), 
 ]
 
 infrastructures = [
-    Infrastructure(id=3, position=10.0, protocol=0, range=200, priority=0, buffer_capacity=100, treatment_speed=0.1, algorithm=Algorithm.V2V),
+    Infrastructure(id=3, position=10.0, protocol=0, range=200, priority=0, buffer_capacity=100, treatment_speed=0.1, algorithm=Utils.Algorithm.V2V),
 ]
 
 # Fonction qui peuple de tentative d'emission de message dans la timeline

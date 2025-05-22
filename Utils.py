@@ -1,5 +1,6 @@
 import heapq
 import abc
+from enum import Enum
 
 # Classe définissant une timeline.
 # Une timeline est une liste d'évènements ordonnée par leur timestamp.
