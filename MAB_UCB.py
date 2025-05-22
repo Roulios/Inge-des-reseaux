@@ -11,7 +11,7 @@ class UCB(MAB):
   def select_arm(self):
     for arm in range(self.n_arms):
       if self.counts[arm] == 0:
-        return arm
+        return Utils.Algorithm(arm)
 
     ucb_values = [0.0 for arm in range(self.n_arms)]
     total_counts = sum(self.counts)
@@ -29,8 +29,8 @@ class UCB(MAB):
       except ZeroDivisionError:
         reward +=0 
 
-    self.counts[chosen_arm] += 1
-    n = self.counts[chosen_arm]
-    value = self.values[chosen_arm]
+    self.counts[chosen_arm.value] += 1
+    n = self.counts[chosen_arm.value]
+    value = self.values[chosen_arm.value]
     new_value = ((n - 1) / float(n)) * value + (1 / float(n)) * reward
-    self.values[chosen_arm] = new_value
+    self.values[chosen_arm.value] = new_value

@@ -24,6 +24,17 @@ class EntityMetrics():
         
         self.entity_id = entity_id
 
+    def add_metric_status(f):
+        def exec(self,*args,**kwargs):
+            result = f(self,*args,**kwargs)
+            self.actualise_metrics()
+            return result
+        return exec
+
+    
+            
+
+
     def get_values(self):
         return [
             self.metrics["sent"],
@@ -33,11 +44,13 @@ class EntityMetrics():
             self.metrics["jitter"]
         ]
 
-    
+    @add_metric_status
     def add_latency(self, message_latency: float):
         """Ajoute dans la liste de latence la latence d'un message reçu"""
         self.latency_list.append(message_latency)
+        
     
+    @add_metric_status
     def add_message_state(self, state: MessageState):     
         """# Ajoute dans la liste l'état d'un message (entre Réussite et Echec)"""   
         self.message_state_list.append(state)
@@ -68,8 +81,8 @@ class EntityMetrics():
 
     def actualise_metrics(self, logs: bool = False):
         self.metrics["latency"] = self.calculate_latency()
-        self.metrics["sent"] = len([_ for message in self.message_state_list if message in [MessageState.received, MessageState.failed_during_reception]])
-        self.metrics["received"] = len([_ for message in self.message_state_list if message == MessageState.received])
+        self.metrics["sent"] = len([message for message in self.message_state_list if message in [MessageState.received, MessageState.failed_during_reception]])
+        self.metrics["received"] = len([message for message in self.message_state_list if message == MessageState.received])
 
         
         self.metrics["received_percentage"] = self.calculate_received_percentage()
@@ -88,3 +101,6 @@ class EntityMetrics():
         if verbose:
             print("Liste des latences :", self.latency_list)
             print("Liste des états des messages :", self.message_state_list)
+
+
+    

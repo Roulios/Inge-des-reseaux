@@ -128,7 +128,8 @@ class TryEmission(Utils.Event):
         if self.entity.algorithm == Utils.Algorithm.V2V:
             receivers = list(filter(lambda x: (x.id != self.entity.id) and (abs(x.position - self.entity.position) < self.entity.range) , users))
         elif self.entity.algorithm == Utils.Algorithm.V2I:
-            receivers = list(filter(lambda x: (x.id != self.entity.id) and (abs(x.position - self.entity.position) < self.entity.range) , infrastructures))            
+            receivers = list(filter(lambda x: (x.id != self.entity.id) and (abs(x.position - self.entity.position) < self.entity.range) , infrastructures))     
+      
         
         # Ajout dans la timeline une tentative d'emission d'un message à chaque candidat
         for receiver in receivers:
@@ -288,7 +289,7 @@ users = [
 ]
 
 infrastructures = [
-    Infrastructure(id=3, position=10.0, protocol=0, range=200, priority=0, buffer_capacity=100, treatment_speed=0.1, algorithm=Utils.Algorithm.V2V),
+    Infrastructure(id=3, position=10.0, protocol=0, range=200, priority=0, buffer_capacity=100, treatment_speed=0.1, algorithm=Utils.Algorithm.V2I),
 ]
 
 # Fonction qui peuple de tentative d'emission de message dans la timeline
@@ -328,7 +329,7 @@ def run_simulation(logs: bool = False):
         event = timeline.pop()
         
         if logs:
-            print("Event at time: ", event.timestamp, "is running")
+            print(f"Event at time:{event.timestamp}({event.__class__.__name__}) is running")
             print("Remaining events: ", timeline.length)
             
         #TODO: Check for bugs
