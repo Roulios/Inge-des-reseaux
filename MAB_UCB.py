@@ -1,13 +1,14 @@
 import numpy as np
 import math
 from MAB_signature import MAB
+
 import Utils
 
 class UCB(MAB):
   def __init__(self,n_arms,weight):
     super().__init__(n_arms,weight)
 
-
+  @MAB.complete_arm_history
   def select_arm(self):
     for arm in range(self.n_arms):
       if self.counts[arm] == 0:

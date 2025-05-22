@@ -10,6 +10,7 @@ class MAB:
         self.weight = weight
         self.counts = [0] * n_arms
         self.values = [0.] * n_arms
+        self.history = []
 
 
     @abc.abstractmethod
@@ -24,3 +25,16 @@ class MAB:
         """update the status of the bandit
         """
         ...
+
+    @staticmethod
+    def complete_arm_history(f):
+        """Usefull for adding decision to history"""
+        def wrap(self,*args,**kwargs):
+            arm = f(self,*args,**kwargs)
+            self.history.append(arm)
+            return arm
+        return wrap
+
+    def get_arm_history(self):
+        """obtenir l'historique des choix"""
+        return self.history

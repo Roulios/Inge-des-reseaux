@@ -340,6 +340,8 @@ def run_simulation(logs: bool = False):
         print("=============== Fin de la simulation ===============")
         for entity in users + infrastructures:
             entity.metrics.show_metrics(verbose=True)
+            if isinstance(entity,User):
+                print(f"historique des choix{entity.mab.get_arm_history()}")
 
 # Fonction qui calcule les métriques de toutes les entités sur le réseau
 def calculate_metrics(logs: bool = False):
