@@ -24,7 +24,10 @@ class UCB(MAB):
     # Calcul de la récompense
     reward = 0
     for i in range(len(self.weight)):
-      reward += self.weight[i]/metrics.get_values()[i]
+      try:
+        reward += self.weight[i]/metrics.get_values()[i]
+      except ZeroDivisionError:
+        reward +=0 
 
     self.counts[chosen_arm] += 1
     n = self.counts[chosen_arm]

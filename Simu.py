@@ -282,9 +282,9 @@ class ChooseAlgorithm(Utils.Event):
             print(f"choix de l'algorithme {self.entity.algorithm} at {self.timestamp}")          
 # Initialisation de la liste des utilisateurs
 users = [
-    User(id=0, position=0.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, mouvement_speed=1, algorithm=Utils.Algorithm.V2I, mab=MAB_UCB.UCB(4,(1,1,1,1))),
-    User(id=1, position=2.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, mouvement_speed=2, algorithm=Utils.Algorithm.V2I, mab=MAB_UCB.UCB(4,(1,1,1,1))),
-    User(id=2, position=4.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, mouvement_speed=3, algorithm=Utils.Algorithm.V2I, mab=MAB_UCB.UCB(4,(1,1,1,1))), 
+    User(id=0, position=0.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, mouvement_speed=1, algorithm=Utils.Algorithm.V2I, mab=MAB_UCB.UCB(2,(1,1,1,1,1))),
+    User(id=1, position=2.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, mouvement_speed=2, algorithm=Utils.Algorithm.V2I, mab=MAB_UCB.UCB(2,(1,1,1,1,1))),
+    User(id=2, position=4.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, mouvement_speed=3, algorithm=Utils.Algorithm.V2I, mab=MAB_UCB.UCB(2,(1,1,1,1,1))), 
 ]
 
 infrastructures = [
