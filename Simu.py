@@ -4,6 +4,7 @@ import Metrics
 import random
 from enum import Enum
 from MAB_signature import MAB
+import MAB_UCB
 
 # Constante pour décrire la vitesse de la transmission physique d'un message, pas vrai dans la réalité.
 MESSAGE_SPEED = 0.005
@@ -72,10 +73,10 @@ class Entity:
         pass
     
 class User(Entity):
-    def __init__(self, id: int, position: float, protocol, range: float, priority: int, buffer_capacity: int, treatment_speed: float, mouvement_speed: float, algorithm: Utils.Algorithm):
+    def __init__(self, id: int, position: float, protocol, range: float, priority: int, buffer_capacity: int, treatment_speed: float, mouvement_speed: float, algorithm: Utils.Algorithm, mab:MAB):
         super().__init__(id, position, protocol, range, priority, buffer_capacity, treatment_speed, algorithm)
         self.mouvement_speed: float = mouvement_speed       # Vitesse de mouvement de l'entité  
-
+        self.mab = mab
     
     # Fonction qui permet de modifier la position d'un utilisateur  
     # param : movement => float : à quel distance on bouge l'utilisateur de sa position actuelle.
@@ -267,9 +268,9 @@ class Movement(Utils.Event):
         self.user.move()
 # Event pour declencher le choix d'un algorithme
 class ChooseAlgorithm(Utils.Event):
-    def __init__(self, timestamp: float, mab: MAB, entity : Entity):
+    def __init__(self, timestamp: float, entity : User):
         super().__init__(timestamp)
-        self.mab = mab
+        self.mab = self.entity.mab
         self.entity = entity
         self.entity.algorithm = MAB.select_arm()
         
@@ -281,9 +282,9 @@ class ChooseAlgorithm(Utils.Event):
             print(f"choix de l'algorithme {self.entity.algorithm} at {self.timestamp}")          
 # Initialisation de la liste des utilisateurs
 users = [
-    User(id=0, position=0.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, mouvement_speed=1, algorithm=Utils.Algorithm.V2I),
-    User(id=1, position=2.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, mouvement_speed=2, algorithm=Utils.Algorithm.V2I),
-    User(id=2, position=4.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, mouvement_speed=3, algorithm=Utils.Algorithm.V2I), 
+    User(id=0, position=0.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, mouvement_speed=1, algorithm=Utils.Algorithm.V2I, mab=MAB_UCB()),
+    User(id=1, position=2.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, mouvement_speed=2, algorithm=Utils.Algorithm.V2I, mab=MAB_UCB()),
+    User(id=2, position=4.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, mouvement_speed=3, algorithm=Utils.Algorithm.V2I, mab=MAB_UCB()), 
 ]
 
 infrastructures = [
@@ -309,8 +310,8 @@ def populate_simulation():
             # Mouvement de l'utilisateur
             timeline.append(Movement(timestamp=i, user=user))
 
-            if(not i%10):
-                timeline.append(ChooseAlgorithm)
+            if(not i%10 and isinstance(user,User)):# les infra vont pas vraiment faire de V2V
+                timeline.append(ChooseAlgorithm(timestamp=i,user = user))
 
 
         

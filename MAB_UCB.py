@@ -1,8 +1,9 @@
 import numpy as np
 import math
+from MAB_signature import MAB
 
-class UCB:
-  def __init__(MAB):
+class UCB(MAB):
+  def __init__(self):
     MAB.__init__(self)
 
 
@@ -21,7 +22,7 @@ class UCB:
   def update(self, metrics, chosen_arm):
     # Calcul de la récompense
     reward = 0
-    for i in range len(weight):
+    for i in range(len(weight)):
       reward += self.weight[i]/metrics[i]
 
     self.counts[chosen_arm] += 1

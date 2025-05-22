@@ -18,7 +18,8 @@ class MAB:
         """
         ...
     
-    def update(metrics:Metrics,chosen_arm:int)->None:
+    @abc.abstractmethod
+    def update(self,metrics:Metrics,chosen_arm:int)->None:
         """update the status of the bandit
         """
         ...
