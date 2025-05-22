@@ -1,10 +1,11 @@
 import numpy as np
 import math
 from MAB_signature import MAB
+import Utils
 
 class UCB(MAB):
-  def __init__(self):
-    MAB.__init__(self)
+  def __init__(self,n_arms,weight):
+    super().__init__(n_arms,weight)
 
 
   def select_arm(self):
@@ -17,13 +18,13 @@ class UCB(MAB):
     for arm in range(self.n_arms):
       bonus = math.sqrt((2 * math.log(total_counts)) / float(self.counts[arm]))
       ucb_values[arm] = self.values[arm] + bonus
-    return ucb_values.index(max(ucb_values))
+    return Utils.Algorithm(ucb_values.index(max(ucb_values)))
 
   def update(self, metrics, chosen_arm):
     # Calcul de la récompense
     reward = 0
-    for i in range(len(weight)):
-      reward += self.weight[i]/metrics[i]
+    for i in range(len(self.weight)):
+      reward += self.weight[i]/metrics.get_values()[i]
 
     self.counts[chosen_arm] += 1
     n = self.counts[chosen_arm]

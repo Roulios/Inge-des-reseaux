@@ -7,6 +7,7 @@ class MAB:
         weight.len() ==  N_metrics
         """
         self.n_arms = n_arms
+        self.weight = weight
         self.counts = [0] * n_arms
         self.values = [0.] * n_arms
 
@@ -14,7 +15,7 @@ class MAB:
     @abc.abstractmethod
     def select_arm(self)->Utils.Algorithm:
         """give the choosen arm given the actual status 
-        @return integer between 1 and n_arms(included) corresponding to the chooseen arm
+        @return algorithm from Utils.Algorithm corresponding to the chooseen arm
         """
         ...
     

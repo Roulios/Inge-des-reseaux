@@ -270,21 +270,21 @@ class Movement(Utils.Event):
 class ChooseAlgorithm(Utils.Event):
     def __init__(self, timestamp: float, entity : User):
         super().__init__(timestamp)
-        self.mab = self.entity.mab
         self.entity = entity
-        self.entity.algorithm = MAB.select_arm()
+        self.mab = self.entity.mab
+        self.entity.algorithm = self.mab.select_arm()
         
 
     def run(self, logs: bool=False):
-        self.mab.update(self.entity.metrics,self.curent_algo) 
+        self.mab.update(self.entity.metrics,self.entity.algorithm) 
         self.entity.algorithm = self.mab.select_arm()
         if logs:
             print(f"choix de l'algorithme {self.entity.algorithm} at {self.timestamp}")          
 # Initialisation de la liste des utilisateurs
 users = [
-    User(id=0, position=0.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, mouvement_speed=1, algorithm=Utils.Algorithm.V2I, mab=MAB_UCB()),
-    User(id=1, position=2.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, mouvement_speed=2, algorithm=Utils.Algorithm.V2I, mab=MAB_UCB()),
-    User(id=2, position=4.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, mouvement_speed=3, algorithm=Utils.Algorithm.V2I, mab=MAB_UCB()), 
+    User(id=0, position=0.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, mouvement_speed=1, algorithm=Utils.Algorithm.V2I, mab=MAB_UCB.UCB(4,(1,1,1,1))),
+    User(id=1, position=2.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, mouvement_speed=2, algorithm=Utils.Algorithm.V2I, mab=MAB_UCB.UCB(4,(1,1,1,1))),
+    User(id=2, position=4.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, mouvement_speed=3, algorithm=Utils.Algorithm.V2I, mab=MAB_UCB.UCB(4,(1,1,1,1))), 
 ]
 
 infrastructures = [
@@ -311,7 +311,7 @@ def populate_simulation():
             timeline.append(Movement(timestamp=i, user=user))
 
             if(not i%10 and isinstance(user,User)):# les infra vont pas vraiment faire de V2V
-                timeline.append(ChooseAlgorithm(timestamp=i,user = user))
+                timeline.append(ChooseAlgorithm(timestamp=i,entity = user))
 
 
         
