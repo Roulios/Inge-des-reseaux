@@ -14,13 +14,19 @@ WATTING_TIME = 0.00001 # Constante pour décaler un peu dans la timeline pour é
 NUMBER_OF_MOVEMENTS = 0
 
 # Temps de la simulation en secondes
-SIMULATION_TIME = 10.0
+SIMULATION_TIME = 100.0
 
 # Probabilité de succès d'une emission entre 2 véhicules (ratio entre la distance et la porté pour laquelle on part du principe que il n'y aura pas d'échec)
 V2V_BASE_SUCCES_PROBABILITY = 0.5
 
 # Probabilité de succès d'une emission entre un véhicule et une infrastructure
 V2I_BASE_SUCCES_PROBABILITY = 0.8
+
+# Nombre de voiture dans la simulation
+NUMBER_OF_USERS = 100
+
+# Nombre d'infrastructure dans la simulation
+NUMBER_OF_INFRASTRUCTURES = 10
 
 
 # Timeline de la simulation, sera utilisée pour stocker les évènements
@@ -154,7 +160,7 @@ class Emission(Utils.Event):
     def run(self, logs=False):
                 
         if logs:
-            print("Try sending message from ", self.message.origin.id, " to ", self.message.receiver, " with probability of fail: ", self.fail_probability*100, "%")
+            print("Try sending message from ", self.message.origin.id, " to ", self.message.receiver, " with probability of fail: ", self.fail_probability*100 if self.fail_probability > 0 else 0, "%")
              
         # Traitement de la probabilité de succès d'une emission
         if random.random() > self.fail_probability:
@@ -282,15 +288,12 @@ class ChooseAlgorithm(Utils.Event):
         if logs:
             print(f"choix de l'algorithme {self.entity.algorithm} at {self.timestamp}")          
 # Initialisation de la liste des utilisateurs
-users = [
-    User(id=0, position=0.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, mouvement_speed=1, algorithm=Utils.Algorithm.V2I, mab=MAB_UCB.UCB(2,(1,1,1,1,1))),
-    User(id=1, position=2.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, mouvement_speed=2, algorithm=Utils.Algorithm.V2I, mab=MAB_UCB.UCB(2,(1,1,1,1,1))),
-    User(id=2, position=4.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, mouvement_speed=3, algorithm=Utils.Algorithm.V2I, mab=MAB_UCB.UCB(2,(1,1,1,1,1))), 
-]
+for i in range(NUMBER_OF_USERS):
+    users.append(User(id=i, position=random.uniform(0, 500), protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, mouvement_speed=random.uniform(1, 5), algorithm=Utils.Algorithm.V2I, mab=MAB_UCB.UCB(2,(1,1,1,1,1))))
 
-infrastructures = [
-    Infrastructure(id=3, position=10.0, protocol=0, range=200, priority=0, buffer_capacity=100, treatment_speed=0.1, algorithm=Utils.Algorithm.V2I),
-]
+
+for i in range (NUMBER_OF_INFRASTRUCTURES):
+    infrastructures.append(Infrastructure(id=i + NUMBER_OF_USERS, position=i*100, protocol=0, range=100, priority=0, buffer_capacity=100, treatment_speed=0.1, algorithm=Utils.Algorithm.V2V))
 
 # Fonction qui peuple de tentative d'emission de message dans la timeline
 def populate_simulation():
@@ -333,7 +336,7 @@ def run_simulation(logs: bool = False):
             print("Remaining events: ", timeline.length)
             
         #TODO: Check for bugs
-        event.run(logs=True)
+        event.run(logs=False)
         
     # Fin de la simulation, check les metriques pour du debug
     if logs:
@@ -354,6 +357,6 @@ def calculate_metrics(logs: bool = False):
 
 # Simulation
 populate_simulation()
-run_simulation(logs=True)
+run_simulation(logs=False)
 
 calculate_metrics(logs=False)
