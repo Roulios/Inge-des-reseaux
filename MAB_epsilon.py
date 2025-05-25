@@ -10,7 +10,8 @@ class EpsilonGreedy(MAB):
     self.epsilon = epsilon
    
 
-
+  @MAB.complete_arm_history
+  @MAB.algorithm_choice
   def select_arm(self):
     if np.random.random() < self.epsilon:
       return np.random.randint(self.n_arms)
