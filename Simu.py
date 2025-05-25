@@ -2,6 +2,7 @@ import abc
 import Utils
 import Metrics
 import random
+import math
 from enum import Enum
 from MAB_signature import MAB
 import MAB_UCB
@@ -141,9 +142,9 @@ class TryEmission(Utils.Event):
         for receiver in receivers:
             # Calcul de la probabilité de succès d'une émission. Plus la distance est grande, plus la probabilité de succès est faible. V2I est censé être plus fiable.
             if self.entity.algorithm == Utils.Algorithm.V2V:
-                fail_probability : float = abs(self.entity.position - receiver.position) / self.entity.range - V2V_BASE_SUCCES_PROBABILITY
+                fail_probability : float = 1-math.exp(-abs(self.entity.position - receiver.position) / self.entity.range) * V2V_BASE_SUCCES_PROBABILITY
             elif self.entity.algorithm == Utils.Algorithm.V2I:
-                fail_probability : float = abs(self.entity.position - receiver.position) / self.entity.range - V2I_BASE_SUCCES_PROBABILITY
+                fail_probability : float = 1-math.exp(-abs(self.entity.position - receiver.position) / self.entity.range) * V2I_BASE_SUCCES_PROBABILITY
                 
             
             
