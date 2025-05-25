@@ -9,6 +9,8 @@ class MessageState(Enum):
     failed_during_emission = 1      # Echec durant l'émission du message
     failed_during_reception = 2     # Echec durant la réception du message
 
+    def __str__(self):
+        return self.name
 
 class EntityMetrics():
     def __init__(self, entity_id: int):

@@ -48,6 +48,9 @@ class Event():
 class Algorithm(Enum):
     V2V = 0
     V2I = 1
+    def __str__(self):
+        return self.name
+
 
   
 # Event emission d'un message.
