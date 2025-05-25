@@ -70,7 +70,7 @@ class EntityMetrics():
         if len(self.message_state_list) == 0:
             return 0
         # Récupère la taille de la liste contenant uniquement les messages dont le statut est received                        
-        return len([state for state in self.message_state_list if state == MessageState.received])
+        return sum(1 for state in self.message_state_list if state == MessageState.received)/len(self.message_state_list)*100
     
     def calculate_jitter(self):
         """on calcule la gigue comme le max d'ecart successifs durant les 5 dernieres communication"""
@@ -81,8 +81,8 @@ class EntityMetrics():
 
     def actualise_metrics(self, logs: bool = False):
         self.metrics["latency"] = self.calculate_latency()
-        self.metrics["sent"] = len([message for message in self.message_state_list if message in [MessageState.received, MessageState.failed_during_reception]])
-        self.metrics["received"] = len([message for message in self.message_state_list if message == MessageState.received])
+        self.metrics["sent"] = sum(1 for message in self.message_state_list )
+        self.metrics["received"] = sum(1 for message in self.message_state_list if message == MessageState.received)
 
         
         self.metrics["received_percentage"] = self.calculate_received_percentage()
