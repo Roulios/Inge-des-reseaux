@@ -4,6 +4,7 @@ import math
 from enum import Enum
 from MAB_signature import MAB
 import MAB_UCB
+import MAB_epsilon
 from Event import *
 from Entity import *
 from Message import *
@@ -31,8 +32,10 @@ NUMBER_OF_USERS = 100
 NUMBER_OF_INFRASTRUCTURES = 10
 
 #Types de MAB a utiliser 
-MAB_LIST = [MAB_UCB.UCB]
+MAB_LIST = [MAB_UCB.UCB,MAB_epsilon.EpsilonGreedy]
 
+#Epsilon de base pour epsilonGreedy
+EPSILONGREEDY_BASE = 0.4
 # Timeline de la simulation, sera utilisée pour stocker les évènements
 timeline: Utils.Timeline = Utils.Timeline()
 
@@ -46,7 +49,24 @@ entities : list[Entity] = []
        
 # Initialisation de la liste des utilisateurs
 for i in range(NUMBER_OF_USERS):
-    users.append(User(id=i, position=random.uniform(0, 500), protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, mouvement_speed=random.uniform(1, 5), algorithm=Utils.Algorithm.V2I, mab=MAB_LIST[i%len(MAB_LIST)](2,(1,1,1,1,1)),timeline=timeline,users=users,infrastructures=infrastructures,WAITING_TIME=WATTING_TIME))
+    users.append(
+        User(id=i, 
+        position=random.uniform(0, 500), 
+        protocol=0, 
+        range=20, 
+        priority=0, 
+        buffer_capacity=10, 
+        treatment_speed=0.1, 
+        mouvement_speed=random.uniform(1, 5), 
+        algorithm=Utils.Algorithm.V2I, 
+        mab=MAB_LIST[i%len(MAB_LIST)](
+                                        n_arms=2,
+                                        weight=(1,1,1,1,1),
+                                        epsilon= EPSILONGREEDY_BASE*random.random() # on va prendre plusieurs epsilon selon la simu
+                                    ),
+        timeline=timeline,users=users,
+        infrastructures=infrastructures,
+        WAITING_TIME=WATTING_TIME))
 
 for i in range (NUMBER_OF_INFRASTRUCTURES):
     infrastructures.append(Infrastructure(id=i + NUMBER_OF_USERS, position=i*100, protocol=0, range=100, priority=0, buffer_capacity=100, treatment_speed=0.1, timeline=timeline,users=users,infrastructures=infrastructures,WAITING_TIME=WATTING_TIME))
