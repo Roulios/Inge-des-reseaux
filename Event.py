@@ -136,11 +136,15 @@ class Reception(Utils.Event):
         self.receiver.receive_message(timestamp=self.timestamp, message=self.message, logs=logs)
         
 class Treatment(Utils.Event):
-    def __init__(self, timestamp: float, entity: Entity):
+    """le traitement d'un message par une infrastructure"""
+    def __init__(self, timestamp: float, entity: Entity,V2I_BASE_SUCCES_PROBABILITY):
         super().__init__(timestamp,entity.timeline)
         self.entity = entity
         self.users = entity.users
         self.infrastructures = entity.infrastructures
+        self.V2I_BASE_SUCCES_PROBABILITY = V2I_BASE_SUCCES_PROBABILITY
+        self.WAITING_TIME = entity.WATTING_TIME
+        self.MESSAGE_SPEED = entity.MESSAGE_SPEED
         
     def run(self, logs: bool=False):
         # Traitement du message
@@ -153,27 +157,29 @@ class Treatment(Utils.Event):
                 print("Message from ", message.origin.id, " to infrastructure ", self.entity.id, "is receveid and get retransmit at time: ", self.timestamp)
                 
             # Calcul de la probabilité de succès de la réémission
-            fail_probability : float = abs(self.entity.position - message.sender.position) / self.entity.range - V2I_BASE_SUCCES_PROBABILITY
+            fail_probability : float = abs(self.entity.position - message.sender.position) / self.entity.range - self.V2I_BASE_SUCCES_PROBABILITY
             
             # On lance une tentative d'emission pour tout les utilisateurs à portée de l'infrastructure
-            receivers : list[User] = list(filter(lambda x: (x.id != self.entity.id) and (abs(x.position - self.entity.position) < self.entity.range) , users))
+            receivers : list[User] = list(filter(lambda x: (x.id != self.entity.id) and (abs(x.position - self.entity.position) < self.entity.range) , self.users))
             for receiver in receivers:
                 # On lance une tentative d'emission pour chaque utilisateur à portée de l'infrastructure
                 self.timeline.append(
                     Emission(
-                        timestamp=self.timestamp + WATTING_TIME,
+                        timestamp=self.timestamp + self.WAITING_TIME,
                         timeline=self.timeline, 
                         list_users=self.users,
                         list_infrastructures = self.infrastructures,
                         fail_probability=fail_probability,
-                        message=Message(id=0, 
-                        sender=self.entity, 
-                        origin=message.origin ,
-                        receiver=receiver.id, 
-                        size=message.size, 
-                        priority=message.priority, 
-                        sent_from_origin_at=message.sent_from_origin_at
-                        )
+                        message=Message(
+                            id=0, 
+                            sender=self.entity, 
+                            origin=message.origin ,
+                            receiver=receiver.id, 
+                            size=message.size, 
+                            priority=message.priority, 
+                            sent_from_origin_at=message.sent_from_origin_at
+                        ),
+                        MESSAGE_SPEED=self.MESSAGE_SPEED
                     )
                 )
            
@@ -196,7 +202,7 @@ class Treatment(Utils.Event):
                 Treatment(
                     timestamp=self.timestamp + (message.size / self.entity.treatment_speed), 
                     entity=self.entity,
-                    timeline=self.timeline
+                    V2I_BASE_SUCCES_PROBABILITY=self.V2I_BASE_SUCCES_PROBABILITY
                     )
                 )
         else:

@@ -16,6 +16,9 @@ class Entity:
                 timeline:Utils.Timeline,
                 users,
                 infrastructures,
+                V2V_BASE_SUCCES_PROBABILITY,
+                V2I_BASE_SUCCES_PROBABILITY,
+                MESSAGE_SPEED,
                 WAITING_TIME):
         self.id: int = id
         self.position: float = position                     # Position de l'entité sur le réseau (Position 1D)
@@ -27,6 +30,9 @@ class Entity:
         self.treatment_speed: float = treatment_speed       # Vitesse de traitement des messages
         self.timeline = timeline
         self.WATTING_TIME = WAITING_TIME
+        self.V2V_BASE_SUCCES_PROBABILITY = V2V_BASE_SUCCES_PROBABILITY
+        self.V2I_BASE_SUCCES_PROBABILITY = V2I_BASE_SUCCES_PROBABILITY
+        self.MESSAGE_SPEED = MESSAGE_SPEED
         self.users = users
         self.infrastructures = infrastructures
                 
@@ -46,7 +52,7 @@ class Entity:
             # Si n'est pas en traitement on lance directement un event traitement.
             if not self.busy:
                 self.busy = True
-                self.timeline.append(Event.Treatment(timestamp + self.WATTING_TIME, self))
+                self.timeline.append(Event.Treatment(timestamp + self.WATTING_TIME, self,V2I_BASE_SUCCES_PROBABILITY=self.V2I_BASE_SUCCES_PROBABILITY))
                         
             return True
         
@@ -79,9 +85,12 @@ class User(Entity):
                 mab:MAB,
                 timeline: Utils.Timeline,
                 users,
-                infrastructures,                
+                infrastructures,
+                V2V_BASE_SUCCES_PROBABILITY,
+                V2I_BASE_SUCCES_PROBABILITY,
+                MESSAGE_SPEED,                
                 WAITING_TIME):
-        super().__init__(id, position, protocol, range, priority, buffer_capacity, treatment_speed,timeline,users,infrastructures,WAITING_TIME)
+        super().__init__(id, position, protocol, range, priority, buffer_capacity, treatment_speed,timeline,users,infrastructures,V2V_BASE_SUCCES_PROBABILITY,V2I_BASE_SUCCES_PROBABILITY,MESSAGE_SPEED,WAITING_TIME)
         self.mouvement_speed: float = mouvement_speed       # Vitesse de mouvement de l'entité  
         self.mab = mab
         self.algorithm: Utils.Algorithm = algorithm               # Algorithme de communication de l'entité
@@ -107,5 +116,8 @@ class Infrastructure(Entity):
                 timeline: Utils.Timeline,
                 users,
                 infrastructures,
+                V2V_BASE_SUCCES_PROBABILITY,
+                V2I_BASE_SUCCES_PROBABILITY,
+                MESSAGE_SPEED,
                 WAITING_TIME):
-        super().__init__(id, position, protocol, range, priority, buffer_capacity, treatment_speed,timeline,users, infrastructures, WAITING_TIME)
+        super().__init__(id, position, protocol, range, priority, buffer_capacity, treatment_speed,timeline,users, infrastructures,V2V_BASE_SUCCES_PROBABILITY,V2I_BASE_SUCCES_PROBABILITY,MESSAGE_SPEED, WAITING_TIME)

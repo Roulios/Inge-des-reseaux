@@ -66,10 +66,28 @@ for i in range(NUMBER_OF_USERS):
                                     ),
         timeline=timeline,users=users,
         infrastructures=infrastructures,
+        V2I_BASE_SUCCES_PROBABILITY=V2I_BASE_SUCCES_PROBABILITY,
+        V2V_BASE_SUCCES_PROBABILITY=V2V_BASE_SUCCES_PROBABILITY,
+        MESSAGE_SPEED=MESSAGE_SPEED,
         WAITING_TIME=WATTING_TIME))
 
 for i in range (NUMBER_OF_INFRASTRUCTURES):
-    infrastructures.append(Infrastructure(id=i + NUMBER_OF_USERS, position=i*100, protocol=0, range=100, priority=0, buffer_capacity=100, treatment_speed=0.1, timeline=timeline,users=users,infrastructures=infrastructures,WAITING_TIME=WATTING_TIME))
+    infrastructures.append(
+        Infrastructure(
+                    id=i + NUMBER_OF_USERS, 
+                    position=i*100, 
+                    protocol=0, 
+                    range=100, 
+                    priority=0, 
+                    buffer_capacity=100, 
+                    treatment_speed=0.1, 
+                    timeline=timeline,
+                    users=users,
+                    infrastructures=infrastructures,
+                    V2I_BASE_SUCCES_PROBABILITY=V2I_BASE_SUCCES_PROBABILITY,
+                    V2V_BASE_SUCCES_PROBABILITY=V2V_BASE_SUCCES_PROBABILITY,
+                    MESSAGE_SPEED=MESSAGE_SPEED,
+                    WAITING_TIME=WATTING_TIME))
 
 # Fonction qui peuple de tentative d'emission de message dans la timeline
 def populate_simulation():

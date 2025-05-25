@@ -28,8 +28,8 @@ class EpsilonGreedy(MAB):
         reward +=0 
         
     # Mise à jour des valeurs des bras
-    self.counts[chosen_arm] += 1
-    n = self.counts[chosen_arm]
-    value = self.values[chosen_arm]
-    new_value = ((n - 1) / float(n)) * value + (1 / float(n)) * reward
-    self.values[chosen_arm] = new_value
+    self.counts[chosen_arm.value] += 1
+    # n = self.counts[chosen_arm]
+    # value = self.values[chosen_arm]
+    # new_value = ((n - 1) / float(n)) * value + (1 / float(n)) * reward
+    # self.values[chosen_arm] = new_value
