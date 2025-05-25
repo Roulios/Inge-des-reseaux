@@ -1,5 +1,6 @@
 import heapq
 import abc
+from enum import Enum
 
 # Classe définissant une timeline.
 # Une timeline est une liste d'évènements ordonnée par leur timestamp.
@@ -41,5 +42,11 @@ class Event():
     def run(self):
         pass
     
-    
+
+#enum qui représente l'un des 2 protocoles de communication, le V2V et le V2I
+class Algorithm(Enum):
+    V2V = 0
+    V2I = 1
+
+  
 # Event emission d'un message.

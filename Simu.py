@@ -3,6 +3,8 @@ import Utils
 import Metrics
 import random
 from enum import Enum
+from MAB_signature import MAB
+import MAB_UCB
 
 # Constante pour décrire la vitesse de la transmission physique d'un message, pas vrai dans la réalité.
 MESSAGE_SPEED = 0.005
@@ -20,18 +22,18 @@ V2V_BASE_SUCCES_PROBABILITY = 0.5
 # Probabilité de succès d'une emission entre un véhicule et une infrastructure
 V2I_BASE_SUCCES_PROBABILITY = 0.8
 
+# Nombre de voiture dans la simulation
+NUMBER_OF_USERS = 100
+
+# Nombre d'infrastructure dans la simulation
+NUMBER_OF_INFRASTRUCTURES = 10
+
 
 # Timeline de la simulation, sera utilisée pour stocker les évènements
 timeline: Utils.Timeline = Utils.Timeline()
 
-#enum qui représente l'un des 2 protocoles de communication, le V2V et le V2I
-class Algorithm(Enum):
-    V2V = 0
-    V2I = 1
-
-
 class Entity:
-    def __init__(self, id: int, position: float, protocol, range: float, priority: int, buffer_capacity: int, treatment_speed: float, algorithm: Algorithm):
+    def __init__(self, id: int, position: float, protocol, range: float, priority: int, buffer_capacity: int, treatment_speed: float, algorithm: Utils.Algorithm):
         self.id: int = id
         self.position: float = position                     # Position de l'entité sur le réseau (Position 1D)
         self.protocol: int = protocol 
@@ -41,7 +43,7 @@ class Entity:
         self.buffer: list[Message] = []                     # Buffer de l'entité
         self.treatment_speed: float = treatment_speed       # Vitesse de traitement des messages
         
-        self.algorithm: Algorithm = algorithm               # Algorithme de communication de l'entité
+        self.algorithm: Utils.Algorithm = algorithm               # Algorithme de communication de l'entité
         
         self.busy: bool = False # Variable pour savoir si l'entité est en traitement de message ou pas.
         
@@ -77,10 +79,10 @@ class Entity:
         pass
     
 class User(Entity):
-    def __init__(self, id: int, position: float, protocol, range: float, priority: int, buffer_capacity: int, treatment_speed: float, mouvement_speed: float, algorithm: Algorithm):
+    def __init__(self, id: int, position: float, protocol, range: float, priority: int, buffer_capacity: int, treatment_speed: float, mouvement_speed: float, algorithm: Utils.Algorithm, mab:MAB):
         super().__init__(id, position, protocol, range, priority, buffer_capacity, treatment_speed, algorithm)
         self.mouvement_speed: float = mouvement_speed       # Vitesse de mouvement de l'entité  
-
+        self.mab = mab
     
     # Fonction qui permet de modifier la position d'un utilisateur  
     # param : movement => float : à quel distance on bouge l'utilisateur de sa position actuelle.
@@ -92,7 +94,7 @@ class User(Entity):
 
     
 class Infrastructure(Entity):
-    def __init__(self, id: int, position: float, protocol, range: float, priority: int, buffer_capacity: int, treatment_speed: float, algorithm: Algorithm):
+    def __init__(self, id: int, position: float, protocol, range: float, priority: int, buffer_capacity: int, treatment_speed: float, algorithm: Utils.Algorithm):
         super().__init__(id, position, protocol, range, priority, buffer_capacity, treatment_speed, algorithm)
 
 class Message:
@@ -129,17 +131,18 @@ class TryEmission(Utils.Event):
         receivers : list[Entity] = []
         
         # Selection de la liste des entités qui peuvent recevoir le message (on regarde la distance entre l'émetteur et les autres entités)
-        if self.entity.algorithm == Algorithm.V2V:
+        if self.entity.algorithm == Utils.Algorithm.V2V:
             receivers = list(filter(lambda x: (x.id != self.entity.id) and (abs(x.position - self.entity.position) < self.entity.range) , users))
-        elif self.entity.algorithm == Algorithm.V2I:
-            receivers = list(filter(lambda x: (x.id != self.entity.id) and (abs(x.position - self.entity.position) < self.entity.range) , infrastructures))            
+        elif self.entity.algorithm == Utils.Algorithm.V2I:
+            receivers = list(filter(lambda x: (x.id != self.entity.id) and (abs(x.position - self.entity.position) < self.entity.range) , infrastructures))     
+      
         
         # Ajout dans la timeline une tentative d'emission d'un message à chaque candidat
         for receiver in receivers:
             # Calcul de la probabilité de succès d'une émission. Plus la distance est grande, plus la probabilité de succès est faible. V2I est censé être plus fiable.
-            if self.entity.algorithm == Algorithm.V2V:
+            if self.entity.algorithm == Utils.Algorithm.V2V:
                 fail_probability : float = abs(self.entity.position - receiver.position) / self.entity.range - V2V_BASE_SUCCES_PROBABILITY
-            elif self.entity.algorithm == Algorithm.V2I:
+            elif self.entity.algorithm == Utils.Algorithm.V2I:
                 fail_probability : float = abs(self.entity.position - receiver.position) / self.entity.range - V2I_BASE_SUCCES_PROBABILITY
                 
             
@@ -157,7 +160,7 @@ class Emission(Utils.Event):
     def run(self, logs=False):
                 
         if logs:
-            print("Try sending message from ", self.message.origin.id, " to ", self.message.receiver, " with probability of fail: ", self.fail_probability*100, "%")
+            print("Try sending message from ", self.message.origin.id, " to ", self.message.receiver, " with probability of fail: ", self.fail_probability*100 if self.fail_probability > 0 else 0, "%")
              
         # Traitement de la probabilité de succès d'une emission
         if random.random() > self.fail_probability:
@@ -180,9 +183,9 @@ class Emission(Utils.Event):
         """
         selected_entities : list[User | Infrastructure] = []
         
-        if self.message.sender.algorithm == Algorithm.V2V:
+        if self.message.sender.algorithm == Utils.Algorithm.V2V:
             selected_entities = users
-        elif self.message.sender.algorithm == Algorithm.V2I:
+        elif self.message.sender.algorithm == Utils.Algorithm.V2I:
             selected_entities = infrastructures
                 
         for entity in selected_entities:
@@ -197,9 +200,9 @@ class Emission(Utils.Event):
             
             elif(distance > entity.range): 
                 if logs:
-                    print("Message from ", self.message.sender.id, " to ", entity.id, " is out of range")
+                    print("Message from ", self.messagsender.id, " to ", entity.id, " is out of range")
                     
-                # Ajouter à la liste des messages dropés du sender car la distance est trop grande
+                # Ajouter à la liste des messages dropés du sende.er car la distance est trop grande
                 self.message.origin.metrics.add_message_state(Metrics.MessageState.failed_during_emission)
         """     
 class Reception(Utils.Event):
@@ -270,17 +273,28 @@ class Movement(Utils.Event):
         
         # On bouge l'utilisateur à la vitesse qu'il possède
         self.user.move()
-            
-# Initialisation de la liste des utilisateurs
-users = [
-    User(id=0, position=0.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, mouvement_speed=1, algorithm=Algorithm.V2I),
-    User(id=1, position=2.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, mouvement_speed=2, algorithm=Algorithm.V2I),
-    User(id=2, position=4.0, protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, mouvement_speed=3, algorithm=Algorithm.V2I), 
-]
+# Event pour declencher le choix d'un algorithme
+class ChooseAlgorithm(Utils.Event):
+    def __init__(self, timestamp: float, entity : User):
+        super().__init__(timestamp)
+        self.entity = entity
+        self.mab = self.entity.mab
+        self.entity.algorithm = self.mab.select_arm()
+        
 
-infrastructures = [
-    Infrastructure(id=3, position=10.0, protocol=0, range=200, priority=0, buffer_capacity=100, treatment_speed=0.1, algorithm=Algorithm.V2V),
-]
+    def run(self, logs: bool=False):
+        self.mab.update(self.entity.metrics,self.entity.algorithm) 
+        self.entity.algorithm = self.mab.select_arm()
+        if logs:
+            print(f"choix de l'algorithme {self.entity.algorithm} at {self.timestamp}")          
+# Initialisation de la liste des utilisateurs
+for i in range(NUMBER_OF_USERS):
+    users.append(User(id=i, position=random.uniform(0, 500), protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, mouvement_speed=random.uniform(1, 5), algorithm=Utils.Algorithm.V2I, mab=MAB_UCB.UCB(2,(1,1,1,1,1))))
+
+
+
+for i in range (NUMBER_OF_INFRASTRUCTURES):
+    infrastructures.append(Infrastructure(id=i + NUMBER_OF_USERS, position=i*100, protocol=0, range=100, priority=0, buffer_capacity=100, treatment_speed=0.1, algorithm=Utils.Algorithm.V2V))
 
 # Fonction qui peuple de tentative d'emission de message dans la timeline
 def populate_simulation():
@@ -300,6 +314,11 @@ def populate_simulation():
             
             # Mouvement de l'utilisateur
             timeline.append(Movement(timestamp=i, user=user))
+
+            if(not i%10 and isinstance(user,User)):# les infra vont pas vraiment faire de V2V
+                timeline.append(ChooseAlgorithm(timestamp=i,entity = user))
+
+
         
 # Fonction qui lance la simulation    
 def run_simulation(logs: bool = False):
@@ -314,17 +333,20 @@ def run_simulation(logs: bool = False):
         event = timeline.pop()
         
         if logs:
-            print("Event at time: ", event.timestamp, "is running")
+            print(f"Event at time:{event.timestamp}({event.__class__.__name__}) is running")
             print("Remaining events: ", timeline.length)
             
         #TODO: Check for bugs
-        event.run(logs=True)
+        event.run(logs=False)
+
         
     # Fin de la simulation, check les metriques pour du debug
     if logs:
         print("=============== Fin de la simulation ===============")
         for entity in users + infrastructures:
             entity.metrics.show_metrics(verbose=True)
+            if isinstance(entity,User):
+                print(f"historique des choix{entity.mab.get_arm_history()}")
 
 # Fonction qui calcule les métriques de toutes les entités sur le réseau
 def calculate_metrics(logs: bool = False):
@@ -337,6 +359,7 @@ def calculate_metrics(logs: bool = False):
 
 # Simulation
 populate_simulation()
+
 run_simulation(logs=True)
 
 calculate_metrics(logs=False)
