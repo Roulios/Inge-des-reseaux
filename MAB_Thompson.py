@@ -9,12 +9,13 @@ class Thompson(MAB):
         self.alpha = [1]* n_arms 
         self.beta = [1]* n_arms 
 
-    @MAB.complete_arm_history 
-    @MAB.algorithm_choice
+
     def update(self, metrics,chosen_arm)->int: 
         self.alpha[chosen_arm] += reward 
         self.beta[chosen_arm] += (1 - reward) 
 
+    @MAB.complete_arm_history 
+    @MAB.algorithm_choice
     def select_arm(self):
         # Échantillonnage
         for arm in range(self.n_arms):
