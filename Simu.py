@@ -5,6 +5,8 @@ from enum import Enum
 from MAB_signature import MAB
 import MAB_UCB
 import MAB_epsilon
+import FullV2I
+import FullV2V
 from Event import *
 from Entity import *
 from Message import *
@@ -32,7 +34,7 @@ NUMBER_OF_USERS = 100
 NUMBER_OF_INFRASTRUCTURES = 10
 
 #Types de MAB a utiliser 
-MAB_LIST = [MAB_UCB.UCB,MAB_epsilon.EpsilonGreedy]
+MAB_LIST = [MAB_UCB.UCB,FullV2I.ChoiceV2I,FullV2V.ChoiceV2V]#MAB_epsilon.EpsilonGreedy]
 
 #Epsilon de base pour epsilonGreedy
 EPSILONGREEDY_BASE = 0.4
@@ -146,6 +148,7 @@ def run_simulation(logs: bool = False):
         #TODO: Check for bugs
         event.run(logs=False)
 
+
         
     # Fin de la simulation, check les metriques pour du debug
     if logs:
@@ -163,7 +166,6 @@ def calculate_metrics(logs: bool = False):
             print("Calcul des métriques de l'entité ", entity.id)
         
         entity.metrics.actualise_metrics(logs)
-
 # Simulation
 populate_simulation()
 
