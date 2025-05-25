@@ -9,7 +9,7 @@ class MessageState(Enum):
     failed_during_emission = 1      # Echec durant l'émission du message
     failed_during_reception = 2     # Echec durant la réception du message
 
-    def __str__(self):
+    def __repr__(self):
         return self.name
 
 class EntityMetrics():
@@ -23,8 +23,12 @@ class EntityMetrics():
         }
         self.latency_list: list[float] = []
         self.message_state_list: list[MessageState] = []
-        
+        self.time = [] # liste des timestamps
+
         self.entity_id = entity_id
+
+
+
 
     def add_metric_status(f):
         def exec(self,*args,**kwargs):
@@ -45,7 +49,7 @@ class EntityMetrics():
             self.metrics["received_percentage"],
             self.metrics["jitter"]
         ]
-
+#TODO: il me faut aussi le timestamp du moment ou on ajoute !
     @add_metric_status
     def add_latency(self, message_latency: float):
         """Ajoute dans la liste de latence la latence d'un message reçu"""
