@@ -14,7 +14,7 @@ WATTING_TIME = 0.00001 # Constante pour décaler un peu dans la timeline pour é
 NUMBER_OF_MOVEMENTS = 0
 
 # Temps de la simulation en secondes
-SIMULATION_TIME = 100.0
+SIMULATION_TIME = 10.0
 
 # Probabilité de succès d'une emission entre 2 véhicules (ratio entre la distance et la porté pour laquelle on part du principe que il n'y aura pas d'échec)
 V2V_BASE_SUCCES_PROBABILITY = 0.5
@@ -292,6 +292,7 @@ for i in range(NUMBER_OF_USERS):
     users.append(User(id=i, position=random.uniform(0, 500), protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, mouvement_speed=random.uniform(1, 5), algorithm=Utils.Algorithm.V2I, mab=MAB_UCB.UCB(2,(1,1,1,1,1))))
 
 
+
 for i in range (NUMBER_OF_INFRASTRUCTURES):
     infrastructures.append(Infrastructure(id=i + NUMBER_OF_USERS, position=i*100, protocol=0, range=100, priority=0, buffer_capacity=100, treatment_speed=0.1, algorithm=Utils.Algorithm.V2V))
 
@@ -337,6 +338,7 @@ def run_simulation(logs: bool = False):
             
         #TODO: Check for bugs
         event.run(logs=False)
+
         
     # Fin de la simulation, check les metriques pour du debug
     if logs:
@@ -357,6 +359,7 @@ def calculate_metrics(logs: bool = False):
 
 # Simulation
 populate_simulation()
-run_simulation(logs=False)
+
+run_simulation(logs=True)
 
 calculate_metrics(logs=False)

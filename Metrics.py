@@ -102,5 +102,3 @@ class EntityMetrics():
             print("Liste des latences :", self.latency_list)
             print("Liste des états des messages :", self.message_state_list)
 
-
-    
