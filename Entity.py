@@ -1,6 +1,22 @@
+import Utils
+import abc
+from MAB_signature import MAB
+import Metrics
+import Event
 
 class Entity:
-    def __init__(self, id: int, position: float, protocol, range: float, priority: int, buffer_capacity: int, treatment_speed: float, algorithm: Utils.Algorithm):
+    def __init__(self, 
+                id: int, 
+                position: float, 
+                protocol, 
+                range: float, 
+                priority: int, 
+                buffer_capacity: int, 
+                treatment_speed: float, 
+                timeline:Utils.Timeline,
+                users,
+                infrastructures,
+                WAITING_TIME):
         self.id: int = id
         self.position: float = position                     # Position de l'entité sur le réseau (Position 1D)
         self.protocol: int = protocol 
@@ -9,15 +25,18 @@ class Entity:
         self.buffer_capacity: int = buffer_capacity 
         self.buffer: list[Message] = []                     # Buffer de l'entité
         self.treatment_speed: float = treatment_speed       # Vitesse de traitement des messages
+        self.timeline = timeline
+        self.WATTING_TIME = WAITING_TIME
+        self.users = users
+        self.infrastructures = infrastructures
+                
         
-        self.algorithm: Utils.Algorithm = algorithm               # Algorithme de communication de l'entité
         
         self.busy: bool = False # Variable pour savoir si l'entité est en traitement de message ou pas.
         
         # Ensemble de variable servant à stocker les métriques de l'entité
         self.metrics: Metrics.EntityMetrics = Metrics.EntityMetrics(entity_id=self.id)
     
-    @abc.abstractmethod          
     def receive_message(self, timestamp: float, message, logs: bool = False):
         # Check si l'on peut stocker le message
         if(self.buffer_capacity > message.size):            
@@ -27,7 +46,7 @@ class Entity:
             # Si n'est pas en traitement on lance directement un event traitement.
             if not self.busy:
                 self.busy = True
-                timeline.append(Treatment(timestamp + WATTING_TIME, self))
+                self.timeline.append(Event.Treatment(timestamp + self.WATTING_TIME, self))
                         
             return True
         
@@ -40,16 +59,33 @@ class Entity:
             
         return False
     
+    
     @abc.abstractmethod        
     def send_message(self, message):
+        """T'es sur que cette méthode abstraite sert a qqchose?
+        """
         # Creer un event dans la timeline pour envoyer le message, la position du packet sera indiqué
         pass
     
 class User(Entity):
-    def __init__(self, id: int, position: float, protocol, range: float, priority: int, buffer_capacity: int, treatment_speed: float, mouvement_speed: float, algorithm: Utils.Algorithm, mab:MAB):
-        super().__init__(id, position, protocol, range, priority, buffer_capacity, treatment_speed, algorithm)
+    def __init__(self, id: int,
+                position: float,
+                protocol, range: float,
+                priority: int,
+                buffer_capacity: int,
+                treatment_speed: float,
+                mouvement_speed: float,
+                algorithm: Utils.Algorithm,
+                mab:MAB,
+                timeline: Utils.Timeline,
+                users,
+                infrastructures,                
+                WAITING_TIME):
+        super().__init__(id, position, protocol, range, priority, buffer_capacity, treatment_speed,timeline,users,infrastructures,WAITING_TIME)
         self.mouvement_speed: float = mouvement_speed       # Vitesse de mouvement de l'entité  
         self.mab = mab
+        self.algorithm: Utils.Algorithm = algorithm               # Algorithme de communication de l'entité
+        
     
     # Fonction qui permet de modifier la position d'un utilisateur  
     # param : movement => float : à quel distance on bouge l'utilisateur de sa position actuelle.
@@ -61,5 +97,15 @@ class User(Entity):
 
     
 class Infrastructure(Entity):
-    def __init__(self, id: int, position: float, protocol, range: float, priority: int, buffer_capacity: int, treatment_speed: float, algorithm: Utils.Algorithm):
-        super().__init__(id, position, protocol, range, priority, buffer_capacity, treatment_speed, algorithm)
+    def __init__(self, id: int,
+                position: float, 
+                protocol, 
+                range: float, 
+                priority: int, 
+                buffer_capacity: int, 
+                treatment_speed: float,
+                timeline: Utils.Timeline,
+                users,
+                infrastructures,
+                WAITING_TIME):
+        super().__init__(id, position, protocol, range, priority, buffer_capacity, treatment_speed,timeline,users, infrastructures, WAITING_TIME)

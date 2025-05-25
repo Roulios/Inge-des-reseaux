@@ -1,6 +1,4 @@
-import abc
 import Utils
-import Metrics
 import random
 import math
 from enum import Enum
@@ -48,10 +46,10 @@ entities : list[Entity] = []
        
 # Initialisation de la liste des utilisateurs
 for i in range(NUMBER_OF_USERS):
-    users.append(User(id=i, position=random.uniform(0, 500), protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, mouvement_speed=random.uniform(1, 5), algorithm=Utils.Algorithm.V2I, mab=MAB_LIST[i%len(MAB_LIST)](2,(1,1,1,1,1))))
+    users.append(User(id=i, position=random.uniform(0, 500), protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, mouvement_speed=random.uniform(1, 5), algorithm=Utils.Algorithm.V2I, mab=MAB_LIST[i%len(MAB_LIST)](2,(1,1,1,1,1)),timeline=timeline,users=users,infrastructures=infrastructures,WAITING_TIME=WATTING_TIME))
 
 for i in range (NUMBER_OF_INFRASTRUCTURES):
-    infrastructures.append(Infrastructure(id=i + NUMBER_OF_USERS, position=i*100, protocol=0, range=100, priority=0, buffer_capacity=100, treatment_speed=0.1, algorithm=Utils.Algorithm.V2V))
+    infrastructures.append(Infrastructure(id=i + NUMBER_OF_USERS, position=i*100, protocol=0, range=100, priority=0, buffer_capacity=100, treatment_speed=0.1, timeline=timeline,users=users,infrastructures=infrastructures,WAITING_TIME=WATTING_TIME))
 
 # Fonction qui peuple de tentative d'emission de message dans la timeline
 def populate_simulation():
@@ -68,13 +66,28 @@ def populate_simulation():
 
             # Envoie du message à l'ensemble des utilisateurs sauf l'éméteur
             # TODO: Voir si y'a mieux, beaucoup d'evènements dans la timeline
-            timeline.append(TryEmission(timestamp=i, entity=user))                
+            timeline.append(
+                TryEmission(
+                    timestamp=i,
+                    entity=user,
+                    timeline=timeline, 
+                    list_users = users, 
+                    list_infrastructures = infrastructures, 
+                    V2I_BASE_SUCCES_PROBABILITY=V2I_BASE_SUCCES_PROBABILITY,
+                    V2V_BASE_SUCCES_PROBABILITY=V2V_BASE_SUCCES_PROBABILITY,
+                    MESSAGE_SPEED=MESSAGE_SPEED
+                    )
+                )                
             
             # Mouvement de l'utilisateur
-            timeline.append(Movement(timestamp=i, user=user))
+            timeline.append(
+                Movement(timestamp=i, user=user, timeline=timeline)
+                )
 
             if(not i%10 and isinstance(user,User)):# les infra vont pas vraiment faire de V2V
-                timeline.append(ChooseAlgorithm(timestamp=i,entity = user))
+                timeline.append(
+                    ChooseAlgorithm(timestamp=i,entity = user, timeline=timeline)
+                    )
 
 # Fonction qui lance la simulation    
 def run_simulation(logs: bool = False):
