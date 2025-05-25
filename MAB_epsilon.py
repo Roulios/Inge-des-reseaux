@@ -1,9 +1,10 @@
 import numpy as np
+from MAB_signature import MAB
 
-class EpsilonGreedy:
-  def __init__(MAB):
-    MAB.__init__(self)
-    self.epsilon = EPSILON # Constante
+class EpsilonGreedy(MAB):
+  def __init__(self,n_arms,weight,epsilon,**kwargs):
+    super().__init__(n_arms,weight)
+    self.epsilon = epsilon
 
   def change_epsilon(epsilon) :
     self.epsilon = epsilon
@@ -19,9 +20,12 @@ class EpsilonGreedy:
   def update(self, metrics, chosen_arm):
     # Calcul de la récompense
     reward = 0
-    for i in range len(weight):
-      reward += self.weight[i]/metrics[i]
-    
+    for i in range(len(self.weight)):
+      try:
+        reward += self.weight[i]/metrics.get_values()[i]
+      except ZeroDivisionError:
+        reward +=0 
+        
     # Mise à jour des valeurs des bras
     self.counts[chosen_arm] += 1
     n = self.counts[chosen_arm]

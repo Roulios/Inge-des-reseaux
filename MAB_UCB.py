@@ -4,7 +4,7 @@ from MAB_signature import MAB
 import Utils
 
 class UCB(MAB):
-  def __init__(self,n_arms,weight):
+  def __init__(self,n_arms,weight,**kwargs):
     super().__init__(n_arms,weight)
 
   @MAB.complete_arm_history
