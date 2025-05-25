@@ -34,6 +34,13 @@ class MAB:
             self.history.append(arm)
             return arm
         return wrap
+    
+    @staticmethod
+    def algorithm_choice(f):
+        """Util for returning the good value type"""
+        def wrap(self,*args,**kwargs)->Utils.Algorithm:
+            return Utils.Algorithm(f(self,*args,**kwargs))
+        return wrap
 
     def get_arm_history(self):
         """obtenir l'historique des choix"""

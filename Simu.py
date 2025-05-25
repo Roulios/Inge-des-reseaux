@@ -29,6 +29,8 @@ NUMBER_OF_USERS = 100
 # Nombre d'infrastructure dans la simulation
 NUMBER_OF_INFRASTRUCTURES = 10
 
+#Types de MAB a utiliser 
+MAB_LIST = [MAB_UCB.UCB]
 
 # Timeline de la simulation, sera utilisée pour stocker les évènements
 timeline: Utils.Timeline = Utils.Timeline()
@@ -290,7 +292,7 @@ class ChooseAlgorithm(Utils.Event):
             print(f"choix de l'algorithme {self.entity.algorithm} at {self.timestamp}")          
 # Initialisation de la liste des utilisateurs
 for i in range(NUMBER_OF_USERS):
-    users.append(User(id=i, position=random.uniform(0, 500), protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, mouvement_speed=random.uniform(1, 5), algorithm=Utils.Algorithm.V2I, mab=MAB_UCB.UCB(2,(1,1,1,1,1))))
+    users.append(User(id=i, position=random.uniform(0, 500), protocol=0, range=20, priority=0, buffer_capacity=10, treatment_speed=0.1, mouvement_speed=random.uniform(1, 5), algorithm=Utils.Algorithm.V2I, mab=MAB_LIST[i%len(MAB_LIST)](2,(1,1,1,1,1))))
 
 
 
@@ -299,6 +301,7 @@ for i in range (NUMBER_OF_INFRASTRUCTURES):
 
 # Fonction qui peuple de tentative d'emission de message dans la timeline
 def populate_simulation():
+    
     #timeline.append(Emission(timestamp=0.0, message=Message(id=0, sender=users[0], origin=users[0], receiver=1, size=5, priority=0)))
     #timeline.append(Emission(timestamp=0.0001, message=Message(id=1, sender=users[0], origin=users[1], receiver=1, size=1, priority=0)))
     #timeline.append(Emission(timestamp=0.6, message=Message(id=2, sender=users[2], origin=users[2], receiver=1, size=1, priority=0)))
@@ -344,7 +347,7 @@ def run_simulation(logs: bool = False):
     # Fin de la simulation, check les metriques pour du debug
     if logs:
         print("=============== Fin de la simulation ===============")
-        for entity in users + infrastructures:
+        for entity in users:# + infrastructures: On ne calcule pas les metriques des infra, ça ne nous interesse pas
             entity.metrics.show_metrics(verbose=True)
             if isinstance(entity,User):
                 print(f"historique des choix{entity.mab.get_arm_history()}")

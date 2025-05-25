@@ -1,13 +1,17 @@
 import numpy as np 
 from scipy.stats import beta 
+from MAB_signature import MAB
 
 
-class Thompson: 
-    def __init__(MAB, true_probability): 
+class Thompson(MAB): 
+    def __init__(self,n_arms,weight, true_probability): 
+        super().__init__(n_arms,weight)
         self.alpha = [1]* n_arms 
         self.beta = [1]* n_arms 
-        
-    def update(self, metrics,chosen_arm): 
+
+    @MAB.complete_arm_history 
+    @MAB.algorithm_choice
+    def update(self, metrics,chosen_arm)->int: 
         self.alpha[chosen_arm] += reward 
         self.beta[chosen_arm] += (1 - reward) 
 
