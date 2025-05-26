@@ -1,9 +1,10 @@
 import numpy as np 
-from scipy.stats import beta 
+from scipy.stats import beta
+from MAB_signature import MAB
 
 
-class Thompson: 
-    def __init__(MAB,n_arms,weight,true_probability,**kwargs):
+class Thompson (MAB): 
+    def __init__(self,n_arms,weight,true_probability,**kwargs):
         super().__init__(n_arms,weight)
         self.true_probability = true_probability
         self.alpha = [1]* n_arms 
@@ -17,10 +18,10 @@ class Thompson:
                 reward += self.weight[i]/metrics.get_values()[i]
             except ZeroDivisionError:
                 reward +=0
-        # Avec Thompson, la récompense est un échec (0) ou une réussite
-        reward =  reward < true_probability[chosen_arm] #faudrait que reward soit entre 0 et 1 pour le comparer à une proba
-        self.alpha[chosen_arm] += reward 
-        self.beta[chosen_arm] += (1 - reward) 
+        # Avec Thompson, la récompense est un échec (0) ou une réussite (1)
+        reward =  reward < self.true_probability[chosen_arm.value]*10 #Le rewrad oscille autour de 5 donc on multiplie par 10 pour respecter proba autour de 0.5
+        self.alpha[chosen_arm.value] += reward 
+        self.beta[chosen_arm.value] += (1 - reward) 
     
     
     @MAB.complete_arm_history
@@ -28,6 +29,6 @@ class Thompson:
     def select_arm(self):
         # Échantillonnage
         for arm in range(self.n_arms):
-            self.values[arm] = np.random.beta(self.alpha[chosen_arm], self.beta[chosen_arm])
+            self.values[arm] = np.random.beta(self.alpha[arm], self.beta[arm])
         # Choix du meilleur bras
         return np.argmax(self.values)

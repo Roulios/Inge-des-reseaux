@@ -5,6 +5,7 @@ from enum import Enum
 from MAB_signature import MAB
 import MAB_UCB
 import MAB_epsilon
+import MAB_Thompson
 import FullV2I
 import FullV2V
 from Event import *
@@ -34,7 +35,7 @@ NUMBER_OF_USERS = 100
 NUMBER_OF_INFRASTRUCTURES = 10
 
 #Types de MAB a utiliser 
-MAB_LIST = [MAB_UCB.UCB,FullV2I.ChoiceV2I,FullV2V.ChoiceV2V]#MAB_epsilon.EpsilonGreedy]
+MAB_LIST = [MAB_UCB.UCB,FullV2I.ChoiceV2I,FullV2V.ChoiceV2V,MAB_epsilon.EpsilonGreedy,MAB_Thompson.Thompson]
 
 #Epsilon de base pour epsilonGreedy
 EPSILONGREEDY_BASE = 0.4
@@ -64,7 +65,8 @@ for i in range(NUMBER_OF_USERS):
         mab=MAB_LIST[i%len(MAB_LIST)](
                                         n_arms=2,
                                         weight=(1,1,1,1,1),
-                                        epsilon= EPSILONGREEDY_BASE*random.random() # on va prendre plusieurs epsilon selon la simu
+                                        epsilon= EPSILONGREEDY_BASE*random.random(), # on va prendre plusieurs epsilon selon la simu
+                                        true_probability = [0.5,0.5]
                                     ),
         timeline=timeline,users=users,
         infrastructures=infrastructures,
