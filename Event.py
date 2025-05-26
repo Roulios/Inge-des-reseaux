@@ -21,18 +21,18 @@ class TryEmission(Utils.Event):
         
         # Selection de la liste des entités qui peuvent recevoir le message (on regarde la distance entre l'émetteur et les autres entités)
         if self.entity.algorithm == Utils.Algorithm.V2V:
-            receivers = list(filter(lambda x: (x.id != self.entity.id) and (abs(x.position - self.entity.position) < self.entity.range) , self.users))
+            receivers = list(filter(lambda x: (x.id != self.entity.id) and (abs(x.position - self.entity.position) < max(self.entity.range,x.range)) , self.users))
         elif self.entity.algorithm == Utils.Algorithm.V2I:
-            receivers = list(filter(lambda x: (x.id != self.entity.id) and (abs(x.position - self.entity.position) < self.entity.range) , self.infrastructures))     
+            receivers = list(filter(lambda x: (x.id != self.entity.id) and (abs(x.position - self.entity.position) < max(self.entity.range,x.range)) , self.infrastructures))     
       
         
         # Ajout dans la timeline une tentative d'emission d'un message à chaque candidat
         for receiver in receivers:
             # Calcul de la probabilité de succès d'une émission. Plus la distance est grande, plus la probabilité de succès est faible. V2I est censé être plus fiable.
             if self.entity.algorithm == Utils.Algorithm.V2V:
-                fail_probability : float = 1-math.exp(-abs(self.entity.position - receiver.position) / self.entity.range) * self.V2V_BASE_SUCCES_PROBABILITY
+                fail_probability : float = 1-math.exp(-abs(self.entity.position - receiver.position) / max(self.entity.range,receiver.range)) * self.V2V_BASE_SUCCES_PROBABILITY
             elif self.entity.algorithm == Utils.Algorithm.V2I:
-                fail_probability : float = 1-math.exp(-abs(self.entity.position - receiver.position) / self.entity.range) * self.V2I_BASE_SUCCES_PROBABILITY
+                fail_probability : float = 1-math.exp(-abs(self.entity.position - receiver.position) / max(self.entity.range,receiver.range)) * self.V2I_BASE_SUCCES_PROBABILITY
                 
             
             
@@ -79,12 +79,13 @@ class Emission(Utils.Event):
                 print("Message from ", self.message.origin.id, " to ", self.message.receiver, " is sent at time: ", self.timestamp)
                         
             # TODO: Faire un truc propre bruh
-            distance = abs(self.message.sender.position - self.message.receiver)
             receiver = list(filter(lambda x: x.id == self.message.receiver, self.users + self.infrastructures))[0]
+
+            distance = abs(self.message.sender.position - receiver.position)
             
             # On lance un event reception pour chaque entité qui est dans la portée de l'émetteur
             self.timeline.append(
-                Reception(timestamp=self.timestamp + distance*self.MESSAGE_SPEED, 
+                Reception(timestamp=self.timestamp + distance/self.MESSAGE_SPEED, 
                 timeline= self.timeline,
                 message=self.message, 
                 receiver=receiver
@@ -96,7 +97,7 @@ class Emission(Utils.Event):
                 print("Message from ", self.message.origin.id, " to ", self.message.receiver, " is dropped : Failed during emission")
                 
             # Ajouter à la liste des messages dropés du sender car l'émission a échoué
-            self.message.origin.metrics.add_message_state(Metrics.MessageState.failed_during_emission)
+            self.message.origin.metrics.add_message_state(Metrics.MessageState.failed_during_emission,self.timestamp)
         """
         selected_entities : list[User | Infrastructure] = []
         
@@ -188,8 +189,12 @@ class Treatment(Utils.Event):
                 print("Message from ", message.sender.id, " to ", self.entity.id, " is received and get treated at time: ", self.timestamp)
                 
             # On ajoute à la liste des messages reçus de l'émetteur et la latence calculé
-            message.origin.metrics.add_message_state(Metrics.MessageState.received)
-            message.origin.metrics.add_latency(self.timestamp - message.sent_from_origin_at)
+            message.origin.metrics.add_message_state(Metrics.MessageState.received,self.timestamp)
+            message.origin.metrics.add_latency(
+                                self.timestamp - message.sent_from_origin_at,
+                                self.timestamp,
+                                message.origin.algorithm
+                            )
             
             
         #if logs:

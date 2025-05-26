@@ -23,7 +23,10 @@ class EntityMetrics():
         }
         self.latency_list: list[float] = []
         self.message_state_list: list[MessageState] = []
-        self.time = [] # liste des timestamps
+        self.latency_timestamp = [] # liste des timestamps
+        self.latency_mab = []
+        self.message_timestamp = []
+
 
         self.entity_id = entity_id
 
@@ -51,15 +54,18 @@ class EntityMetrics():
         ]
 #TODO: il me faut aussi le timestamp du moment ou on ajoute !
     @add_metric_status
-    def add_latency(self, message_latency: float):
+    def add_latency(self, message_latency: float,time,mabtype):
         """Ajoute dans la liste de latence la latence d'un message reçu"""
         self.latency_list.append(message_latency)
+        self.latency_timestamp.append(time)
+        self.latency_mab.append(mabtype)
         
     
     @add_metric_status
-    def add_message_state(self, state: MessageState):     
+    def add_message_state(self, state: MessageState,time):     
         """# Ajoute dans la liste l'état d'un message (entre Réussite et Echec)"""   
         self.message_state_list.append(state)
+        self.message_timestamp.append(time)
         
     def calculate_latency(self):
         """
@@ -107,4 +113,7 @@ class EntityMetrics():
         if verbose:
             print("Liste des latences :", self.latency_list)
             print("Liste des états des messages :", self.message_state_list)
+    
+    def latency_history(self):
+        return {"time":self.latency_timestamp,"latency":self.latency_list,"mab":self.latency_mab}
 

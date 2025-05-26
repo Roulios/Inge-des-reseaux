@@ -11,31 +11,33 @@ import FullV2V
 from Event import *
 from Entity import *
 from Message import *
+import Exploit_simulation
 
 # Constante pour décrire la vitesse de la transmission physique d'un message, pas vrai dans la réalité.
-MESSAGE_SPEED = 0.005
-WATTING_TIME = 0.00001 # Constante pour décaler un peu dans la timeline pour éviter les collisions.
-
-# Constante pour décrire le nombre d'évènements de mouvement dans la timeline par utilisateur = Distance parcouru
-NUMBER_OF_MOVEMENTS = 0
+MESSAGE_SPEED = 100
+WATTING_TIME = 0.0000 # Constante pour décaler un peu dans la timeline pour éviter les collisions.
 
 # Temps de la simulation en secondes
-SIMULATION_TIME = 10.0
+SIMULATION_TIME = 50.0
 
 # Probabilité de succès d'une emission entre 2 véhicules (ratio entre la distance et la porté pour laquelle on part du principe que il n'y aura pas d'échec)
-V2V_BASE_SUCCES_PROBABILITY = 0.5
+V2V_BASE_SUCCES_PROBABILITY = 0.2
 
 # Probabilité de succès d'une emission entre un véhicule et une infrastructure
 V2I_BASE_SUCCES_PROBABILITY = 0.8
 
 # Nombre de voiture dans la simulation
-NUMBER_OF_USERS = 100
+NUMBER_OF_USERS = 10
 
 # Nombre d'infrastructure dans la simulation
-NUMBER_OF_INFRASTRUCTURES = 10
+NUMBER_OF_INFRASTRUCTURES = 4
 
 #Types de MAB a utiliser 
-MAB_LIST = [MAB_UCB.UCB,FullV2I.ChoiceV2I,FullV2V.ChoiceV2V,MAB_epsilon.EpsilonGreedy,MAB_Thompson.Thompson]
+MAB_LIST = [MAB_UCB.UCB,
+            FullV2I.ChoiceV2I,
+            FullV2V.ChoiceV2V,
+            MAB_epsilon.EpsilonGreedy,
+            MAB_Thompson]
 
 #Epsilon de base pour epsilonGreedy
 EPSILONGREEDY_BASE = 0.4
@@ -54,20 +56,19 @@ entities : list[Entity] = []
 for i in range(NUMBER_OF_USERS):
     users.append(
         User(id=i, 
-        position=random.uniform(0, 500), 
-        protocol=0, 
+        position=random.uniform(0, 100), 
         range=20, 
         priority=0, 
-        buffer_capacity=10, 
-        treatment_speed=0.1, 
+        buffer_capacity=30, 
+        treatment_speed=10000, 
         mouvement_speed=random.uniform(1, 5), 
         algorithm=Utils.Algorithm.V2I, 
         mab=MAB_LIST[i%len(MAB_LIST)](
                                         n_arms=2,
-                                        weight=(1,1,1,1,1),
+                                        weight=(0.1,0.1,10,0.1,0.1),
                                         epsilon= EPSILONGREEDY_BASE*random.random(), # on va prendre plusieurs epsilon selon la simu
                                         true_probability = [0.5,0.5]
-                                    ),
+),
         timeline=timeline,users=users,
         infrastructures=infrastructures,
         V2I_BASE_SUCCES_PROBABILITY=V2I_BASE_SUCCES_PROBABILITY,
@@ -79,12 +80,11 @@ for i in range (NUMBER_OF_INFRASTRUCTURES):
     infrastructures.append(
         Infrastructure(
                     id=i + NUMBER_OF_USERS, 
-                    position=i*100, 
-                    protocol=0, 
+                    position=i*30, 
                     range=100, 
                     priority=0, 
-                    buffer_capacity=100, 
-                    treatment_speed=0.1, 
+                    buffer_capacity=300, 
+                    treatment_speed=100000, 
                     timeline=timeline,
                     users=users,
                     infrastructures=infrastructures,
@@ -126,7 +126,7 @@ def populate_simulation():
                 Movement(timestamp=i, user=user, timeline=timeline)
                 )
 
-            if(not i%10 and isinstance(user,User)):# les infra vont pas vraiment faire de V2V
+            if(not i%5 and isinstance(user,User)):# les infra vont pas vraiment faire de V2V
                 timeline.append(
                     ChooseAlgorithm(timestamp=i,entity = user, timeline=timeline)
                     )
@@ -168,9 +168,14 @@ def calculate_metrics(logs: bool = False):
             print("Calcul des métriques de l'entité ", entity.id)
         
         entity.metrics.actualise_metrics(logs)
+    d_lat_hist={mab.__name__:{}for mab in MAB_LIST}
+    for e in users:
+        d = e.metrics.latency_history()
+        d_lat_hist[e.mab.__class__.__name__][e.id] = (d["time"],d["latency"],d["mab"])
+    Exploit_simulation.show_latency_gaph(d_lat_hist)
 # Simulation
 populate_simulation()
 
-run_simulation(logs=True)
+run_simulation(logs=False)
 
 calculate_metrics(logs=False)

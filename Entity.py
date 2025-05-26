@@ -8,7 +8,6 @@ class Entity:
     def __init__(self, 
                 id: int, 
                 position: float, 
-                protocol, 
                 range: float, 
                 priority: int, 
                 buffer_capacity: int, 
@@ -22,7 +21,6 @@ class Entity:
                 WAITING_TIME):
         self.id: int = id
         self.position: float = position                     # Position de l'entité sur le réseau (Position 1D)
-        self.protocol: int = protocol 
         self.range: float = range                           # Porté de reception d'un message de l'entité
         self.priority: int = priority                       # Priorité de l'entité sur le réseau
         self.buffer_capacity: int = buffer_capacity 
@@ -61,7 +59,7 @@ class Entity:
                 print("Message from ", message.origin.id, " to ", self.id, " is dropped : Buffer full")
                 
             # Ajouter à la liste des messages dropés du sender car le buffer est plein
-            message.origin.metrics.add_message_state(Metrics.MessageState.failed_during_reception)
+            message.origin.metrics.add_message_state(Metrics.MessageState.failed_during_reception,timestamp)
             
         return False
     
@@ -76,7 +74,7 @@ class Entity:
 class User(Entity):
     def __init__(self, id: int,
                 position: float,
-                protocol, range: float,
+                range: float,
                 priority: int,
                 buffer_capacity: int,
                 treatment_speed: float,
@@ -90,7 +88,7 @@ class User(Entity):
                 V2I_BASE_SUCCES_PROBABILITY,
                 MESSAGE_SPEED,                
                 WAITING_TIME):
-        super().__init__(id, position, protocol, range, priority, buffer_capacity, treatment_speed,timeline,users,infrastructures,V2V_BASE_SUCCES_PROBABILITY,V2I_BASE_SUCCES_PROBABILITY,MESSAGE_SPEED,WAITING_TIME)
+        super().__init__(id, position, range, priority, buffer_capacity, treatment_speed,timeline,users,infrastructures,V2V_BASE_SUCCES_PROBABILITY,V2I_BASE_SUCCES_PROBABILITY,MESSAGE_SPEED,WAITING_TIME)
         self.mouvement_speed: float = mouvement_speed       # Vitesse de mouvement de l'entité  
         self.mab = mab
         self.algorithm: Utils.Algorithm = algorithm               # Algorithme de communication de l'entité
@@ -108,7 +106,6 @@ class User(Entity):
 class Infrastructure(Entity):
     def __init__(self, id: int,
                 position: float, 
-                protocol, 
                 range: float, 
                 priority: int, 
                 buffer_capacity: int, 
@@ -120,4 +117,4 @@ class Infrastructure(Entity):
                 V2I_BASE_SUCCES_PROBABILITY,
                 MESSAGE_SPEED,
                 WAITING_TIME):
-        super().__init__(id, position, protocol, range, priority, buffer_capacity, treatment_speed,timeline,users, infrastructures,V2V_BASE_SUCCES_PROBABILITY,V2I_BASE_SUCCES_PROBABILITY,MESSAGE_SPEED, WAITING_TIME)
+        super().__init__(id, position, range, priority, buffer_capacity, treatment_speed,timeline,users, infrastructures,V2V_BASE_SUCCES_PROBABILITY,V2I_BASE_SUCCES_PROBABILITY,MESSAGE_SPEED, WAITING_TIME)
