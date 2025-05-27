@@ -20,12 +20,7 @@ class EpsilonGreedy(MAB):
 
   def update(self, metrics, chosen_arm):
     # Calcul de la récompense
-    reward = 0
-    for i in range(len(self.weight)):
-      try:
-        reward += self.weight[i]/metrics.get_values()[i]
-      except ZeroDivisionError:
-        reward +=0 
+    reward = self.calculate_reward(metrics=metrics)
         
     # Mise à jour des valeurs des bras
     self.counts[chosen_arm.value] += 1

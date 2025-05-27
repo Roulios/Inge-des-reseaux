@@ -45,3 +45,19 @@ class MAB:
     def get_arm_history(self):
         """obtenir l'historique des choix"""
         return self.history
+    
+    
+    def calculate_reward(self, metrics:Metrics)-> float:
+        """calculating rewards"""
+        reward = 0
+        values = metrics.get_values()
+        try:
+            reward += self.weight[0]/values[0]#la latence doit etre le plus petite possible, elle est entre 0 et x dans  R+
+        except ZeroDivisionError:
+            ...
+        reward += self.weight[1]*values[1]# le pourcentage reçu doit être grand
+        try:
+            reward += self.weight[2]/values[2] # la jigue doit etre le plus petite possible
+        except ZeroDivisionError:
+            ...
+        return reward

@@ -23,12 +23,7 @@ class UCB(MAB):
 
   def update(self, metrics, chosen_arm):
     # Calcul de la récompense
-    reward = 0
-    for i in range(len(self.weight)):
-      try:
-        reward += self.weight[i]/metrics.get_values()[i]
-      except ZeroDivisionError:
-        reward +=0 
+    reward = self.calculate_reward(metrics=metrics)
 
     self.counts[chosen_arm.value] += 1
     n = self.counts[chosen_arm.value]

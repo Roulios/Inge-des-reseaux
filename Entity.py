@@ -3,6 +3,7 @@ import abc
 from MAB_signature import MAB
 import Metrics
 import Event
+import random
 
 class Entity:
     def __init__(self, 
@@ -33,6 +34,7 @@ class Entity:
         self.MESSAGE_SPEED = MESSAGE_SPEED
         self.users = users
         self.infrastructures = infrastructures
+        self.noise = random.uniform(-0.50,0.50)
                 
         
         

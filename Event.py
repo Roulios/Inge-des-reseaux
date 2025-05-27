@@ -34,8 +34,8 @@ class TryEmission(Utils.Event):
             elif self.entity.algorithm == Utils.Algorithm.V2I:
                 fail_probability : float = 1-math.exp(-abs(self.entity.position - receiver.position) / max(self.entity.range,receiver.range)) * self.V2I_BASE_SUCCES_PROBABILITY
                 
-            
-            
+            #on ajoute du bruit 
+            fail_probability =max(min(1.0,fail_probability+self.entity.noise),0) 
             self.timeline.append(
                 Emission(
                     timestamp=self.timestamp,
@@ -239,3 +239,15 @@ class ChooseAlgorithm(Utils.Event):
         self.entity.algorithm = self.mab.select_arm()
         if logs:
             print(f"choix de l'algorithme {self.entity.algorithm} at {self.timestamp}")          
+
+class AddStatistics(Utils.Event):
+    def __init__(self, timestamp: float, timeline, entity : User):
+        super().__init__(timestamp,timeline)
+        self.entity = entity
+        
+        
+
+    def run(self, logs: bool=False):
+        self.entity.metrics.actualise_history(self.timestamp,self.entity.algorithm)
+        if logs:
+            print(f"new history added at {self.timestamp}")          

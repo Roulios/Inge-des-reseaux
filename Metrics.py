@@ -27,11 +27,13 @@ class EntityMetrics():
         self.latency_mab = []
         self.message_timestamp = []
 
-
+        self.history = {
+            "timestamp":[],
+            "latency": [],
+            "received_percentage":[],
+            "jitter":[],
+            "mab_type":[]}
         self.entity_id = entity_id
-
-
-
 
     def add_metric_status(f):
         def exec(self,*args,**kwargs):
@@ -40,19 +42,14 @@ class EntityMetrics():
             return result
         return exec
 
-    
-            
-
-
     def get_values(self):
+        """"retourne une liste qui contient la latence, le %age de paquets reçus et la gigue"""
         return [
-            self.metrics["sent"],
-            self.metrics["received"],
             self.metrics["latency"],
             self.metrics["received_percentage"],
             self.metrics["jitter"]
         ]
-#TODO: il me faut aussi le timestamp du moment ou on ajoute !
+
     @add_metric_status
     def add_latency(self, message_latency: float,time,mabtype):
         """Ajoute dans la liste de latence la latence d'un message reçu"""
@@ -117,3 +114,13 @@ class EntityMetrics():
     def latency_history(self):
         return {"time":self.latency_timestamp,"latency":self.latency_list,"mab":self.latency_mab}
 
+    def actualise_history(self,timestamp,mab_type):
+        self.history["timestamp"].append(timestamp)
+        self.history["mab_type"].append(mab_type)
+        values = self.get_values()
+        self.history["latency"].append(values[0])
+        self.history["received_percentage"].append(values[1])
+        self.history["jitter"].append(values[2])
+
+    def get_history(self):
+        return self.history
