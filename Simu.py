@@ -67,7 +67,7 @@ for i in range(NUMBER_OF_USERS):
                                         n_arms=2,
                                         weight=(0.3,7,0.3),#le choix d'un trop grand poid pour les latences est peu judicieux: le V2I a dans la simulation bcp plus de latence => TODO: a corriger
                                         epsilon= EPSILONGREEDY_BASE*random.random(), # on va prendre plusieurs epsilon selon la simu
-                                        true_probability = [2,0.5]
+                                        true_probability = [0.5,1]
 ),
         timeline=timeline,users=users,
         infrastructures=infrastructures,

@@ -6,9 +6,7 @@ class EpsilonGreedy(MAB):
     super().__init__(n_arms,weight)
     self.epsilon = epsilon
 
-  def change_epsilon(epsilon) :
-    self.epsilon = epsilon
-   
+
 
   @MAB.complete_arm_history
   @MAB.algorithm_choice
