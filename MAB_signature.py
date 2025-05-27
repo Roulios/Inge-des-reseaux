@@ -55,7 +55,7 @@ class MAB:
             reward += self.weight[0]/values[0]#la latence doit etre le plus petite possible, elle est entre 0 et x dans  R+
         except ZeroDivisionError:
             ...
-        reward += self.weight[1]*values[1]# le pourcentage reçu doit être grand
+        reward += self.weight[1]*values[1]**2# le pourcentage reçu doit être grand
         try:
             reward += self.weight[2]/values[2] # la jigue doit etre le plus petite possible
         except ZeroDivisionError:
