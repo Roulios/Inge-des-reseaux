@@ -18,19 +18,19 @@ MESSAGE_SPEED = 100 #distance*temps**-1
 WATTING_TIME = 0.00000001 # Constante pour décaler un peu dans la timeline pour éviter les collisions.
 
 # Temps de la simulation en secondes
-SIMULATION_TIME = 500.0
+SIMULATION_TIME = 100.0
 
 # Probabilité de succès d'une emission entre 2 véhicules (ratio entre la distance et la porté pour laquelle on part du principe que il n'y aura pas d'échec)
-V2V_BASE_SUCCES_PROBABILITY = 0.95
+V2V_BASE_SUCCES_PROBABILITY = 0.4
 
 # Probabilité de succès d'une emission entre un véhicule et une infrastructure
-V2I_BASE_SUCCES_PROBABILITY = 0.4
+V2I_BASE_SUCCES_PROBABILITY = 0.9
 
 # Nombre de voiture dans la simulation
-NUMBER_OF_USERS = 40
+NUMBER_OF_USERS = 400
 
 # Nombre d'infrastructure dans la simulation
-NUMBER_OF_INFRASTRUCTURES = 10
+NUMBER_OF_INFRASTRUCTURES = 30
 
 #Types de MAB a utiliser 
 MAB_LIST = [MAB_UCB.UCB,
@@ -67,7 +67,7 @@ for i in range(NUMBER_OF_USERS):
                                         n_arms=2,
                                         weight=(0.3,7,0.3),#le choix d'un trop grand poid pour les latences est peu judicieux: le V2I a dans la simulation bcp plus de latence => TODO: a corriger
                                         epsilon= EPSILONGREEDY_BASE*random.random(), # on va prendre plusieurs epsilon selon la simu
-                                        true_probability = [0.5,1]
+                                        true_probability = [0.4,0.6]
 ),
         timeline=timeline,users=users,
         infrastructures=infrastructures,
@@ -80,11 +80,11 @@ for i in range (NUMBER_OF_INFRASTRUCTURES):
     infrastructures.append(
         Infrastructure(
                     id=i + NUMBER_OF_USERS, 
-                    position=i*100, 
-                    range=45, 
+                    position=i*50, 
+                    range=50, 
                     priority=0, 
-                    buffer_capacity=10, 
-                    treatment_speed=1000, 
+                    buffer_capacity=30, 
+                    treatment_speed=10, 
                     timeline=timeline,
                     users=users,
                     infrastructures=infrastructures,

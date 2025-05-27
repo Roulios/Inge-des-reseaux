@@ -17,12 +17,12 @@ class EpsilonGreedy(MAB):
       return np.argmax(self.values)
 
   def update(self, metrics, chosen_arm):
-    # Calcul de la récompense
-    reward = self.calculate_reward(metrics=metrics)
-        
-    # Mise à jour des valeurs des bras
-    self.counts[chosen_arm.value] += 1
-    # n = self.counts[chosen_arm]
-    # value = self.values[chosen_arm]
-    # new_value = ((n - 1) / float(n)) * value + (1 / float(n)) * reward
-    # self.values[chosen_arm] = new_value
+    reward = self.calculate_reward(metrics)
+
+    arm = chosen_arm.value
+    self.counts[arm] += 1
+    n = self.counts[arm]
+    value = self.values[arm]
+
+    # Mise à jour incrémentale de la moyenne
+    self.values[arm] = ((n - 1) / n) * value + (1 / n) * reward

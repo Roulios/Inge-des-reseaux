@@ -51,13 +51,15 @@ class MAB:
         """calculating rewards"""
         reward = 0
         values = metrics.get_values()
+        total = sum(self.weight)
         try:
-            reward += self.weight[0]/values[0]#la latence doit etre le plus petite possible, elle est entre 0 et x dans  R+
+            reward += self.weight[0]/values[0]/total#la latence doit etre le plus petite possible, elle est entre 0 et x dans  R+
         except ZeroDivisionError:
             ...
-        reward += self.weight[1]*values[1]**2# le pourcentage reçu doit être grand
+        reward += self.weight[1]*values[1]**2/total# le pourcentage reçu doit être grand
         try:
-            reward += self.weight[2]/values[2] # la jigue doit etre le plus petite possible
+            reward += self.weight[2]/values[2]/total # la jigue doit etre le plus petite possible
         except ZeroDivisionError:
             ...
-        return reward
+        reward_max= (self.weight[0]/0.8+self.weight[1]*100**2+self.weight[2]/0.01)/total
+        return reward/reward_max

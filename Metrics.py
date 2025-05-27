@@ -68,8 +68,8 @@ class EntityMetrics():
         """
         Calcul la moyenne glissante de la latence des paquets
         """
-        if len(self.latency_list) == 0:
-            return 100000000000 # ça evite des problemes de div par 0, une latence infinie
+        if len(self.latency_list) <= 1:
+            return 10 # ça evite des problemes de div par 0, une latence infinie
         return sum(self.latency_list[-10:]) / len(self.latency_list[-10:])
     
     def calculate_received_percentage(self):

@@ -20,6 +20,7 @@ class TryEmission(Utils.Event):
         receivers : list[Entity] = []
         
         # Selection de la liste des entités qui peuvent recevoir le message (on regarde la distance entre l'émetteur et les autres entités)
+        assert isinstance(self.entity,User)
         if self.entity.algorithm == Utils.Algorithm.V2V:
             receivers = list(filter(lambda x: (x.id != self.entity.id) and (abs(x.position - self.entity.position) < max(self.entity.range,x.range)) , self.users))
         elif self.entity.algorithm == Utils.Algorithm.V2I:
@@ -34,8 +35,9 @@ class TryEmission(Utils.Event):
             elif self.entity.algorithm == Utils.Algorithm.V2I:
                 fail_probability : float = 1-math.exp(-abs(self.entity.position - receiver.position) / max(self.entity.range,receiver.range)) * self.V2I_BASE_SUCCES_PROBABILITY
                 
-            #on ajoute du bruit 
+            #on ajoute du bruit  
             fail_probability =max(min(1.0,fail_probability+self.entity.noise),0) 
+            
             self.timeline.append(
                 Emission(
                     timestamp=self.timestamp,
@@ -85,7 +87,7 @@ class Emission(Utils.Event):
             
             # On lance un event reception pour chaque entité qui est dans la portée de l'émetteur
             self.timeline.append(
-                Reception(timestamp=self.timestamp + distance/self.MESSAGE_SPEED, 
+                Reception(timestamp=self.timestamp + distance/self.MESSAGE_SPEED + self.message.size/self.message.sender.treatment_speed, 
                 timeline= self.timeline,
                 message=self.message, 
                 receiver=receiver
