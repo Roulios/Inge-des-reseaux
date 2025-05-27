@@ -27,10 +27,10 @@ V2V_BASE_SUCCES_PROBABILITY = 0.4
 V2I_BASE_SUCCES_PROBABILITY = 0.9
 
 # Nombre de voiture dans la simulation
-NUMBER_OF_USERS = 400
+NUMBER_OF_USERS = 20
 
 # Nombre d'infrastructure dans la simulation
-NUMBER_OF_INFRASTRUCTURES = 30
+NUMBER_OF_INFRASTRUCTURES = 4
 
 #Types de MAB a utiliser 
 MAB_LIST = [MAB_UCB.UCB,
@@ -60,7 +60,7 @@ for i in range(NUMBER_OF_USERS):
         range=20, 
         priority=0, 
         buffer_capacity=5, 
-        treatment_speed=0.1, 
+        treatment_speed=0.01, 
         mouvement_speed=random.uniform(0, 1), 
         algorithm=Utils.Algorithm.V2I, 
         mab=MAB_LIST[i%len(MAB_LIST)](
@@ -84,7 +84,7 @@ for i in range (NUMBER_OF_INFRASTRUCTURES):
                     range=50, 
                     priority=0, 
                     buffer_capacity=30, 
-                    treatment_speed=10, 
+                    treatment_speed=1, 
                     timeline=timeline,
                     users=users,
                     infrastructures=infrastructures,
