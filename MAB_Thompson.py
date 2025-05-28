@@ -15,6 +15,7 @@ class Thompson(MAB):
         reward = self.calculate_reward(metrics=metrics)
         # Avec Thompson, la récompense est un échec (0) ou une réussite (1)
         reward =  reward < self.true_probability[chosen_arm.value] #Le rewrad oscille autour de 0.5 pour respecter proba autour de 0.5
+        # Mise à jour des paramètres
         self.alpha[chosen_arm.value] += reward 
         self.beta[chosen_arm.value] += (1 - reward) 
     
